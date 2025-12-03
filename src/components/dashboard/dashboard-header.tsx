@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ArrowLeftRight, CreditCard } from 'lucide-react';
+import { Plus, ArrowLeftRight, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -24,11 +24,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
             </div>
 
             <div className="flex items-center gap-3">
-                <Link href="/invoices/new">
-                    <Button variant="outline" size="sm" className="rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
-                        <FileText className="mr-2 h-4 w-4" /> New Invoice
-                    </Button>
-                </Link>
+
                 <Link href="/transactions/forex/new">
                     <Button variant="outline" size="sm" className="rounded-full border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
                         <ArrowLeftRight className="mr-2 h-4 w-4" /> New Forex
