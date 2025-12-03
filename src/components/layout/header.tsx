@@ -9,19 +9,25 @@ import { Search, ChevronRight, Home } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { MobileNav } from '@/components/layout/mobile-nav';
 
 interface HeaderProps {
     user: User;
     timezone: string;
+    companyName?: string;
 }
 
-export function Header({ user, timezone }: HeaderProps) {
+export function Header({ user, timezone, companyName }: HeaderProps) {
     const pathname = usePathname();
     const paths = pathname.split('/').filter(Boolean);
 
     return (
-        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 px-6 transition-all">
+        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 px-4 md:px-6 transition-all">
+            {/* Mobile Nav Trigger */}
             <div className="flex flex-1 items-center gap-4 bg-background/60 backdrop-blur-xl border border-border/40 shadow-sm rounded-full px-4 py-2 mt-4 mx-2">
+                {/* Mobile Nav Trigger */}
+                <MobileNav companyName={companyName} />
+
                 {/* Breadcrumbs */}
                 <nav className="hidden md:flex items-center text-xs text-muted-foreground/70 font-medium tracking-wide uppercase">
                     <Link href="/dashboard" className="flex items-center hover:text-primary transition-colors">
@@ -59,7 +65,7 @@ export function Header({ user, timezone }: HeaderProps) {
                     />
                 </div>
 
-                <div className="flex items-center gap-3 pl-3 border-l border-border/10">
+                <div className="flex items-center gap-1 pl-3 border-l border-border/10">
                     <Clock timezone={timezone} />
                     <NotificationsBell />
                     <ModeToggle />

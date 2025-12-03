@@ -131,7 +131,7 @@ const items = [
     },
 ];
 
-export function Sidebar({ companyName = 'BizAd' }: { companyName?: string }) {
+export function Sidebar({ companyName = 'BizAd', className }: { companyName?: string; className?: string }) {
     const pathname = usePathname();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -199,7 +199,7 @@ export function Sidebar({ companyName = 'BizAd' }: { companyName?: string }) {
     }).filter(Boolean) as typeof items;
 
     return (
-        <div className="flex flex-col h-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-2xl shadow-primary/5 rounded-3xl overflow-hidden">
+        <div className={cn("flex flex-col h-full bg-background/80 backdrop-blur-xl border border-border/40 shadow-2xl shadow-primary/5 rounded-3xl overflow-hidden", className)}>
             <div className="p-6 pb-6 flex items-center gap-3 border-b border-border/10">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-white/20">
                     <Zap className="h-6 w-6 text-primary-foreground fill-current" />
@@ -315,14 +315,14 @@ export function Sidebar({ companyName = 'BizAd' }: { companyName?: string }) {
             </nav>
 
             <div className="p-4 mt-auto">
-                <div className="bg-gradient-to-br from-primary/10 to-transparent p-4 rounded-2xl border border-primary/10">
+                <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl shadow-lg shadow-primary/20">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Activity className="h-4 w-4 text-primary" />
+                        <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                            <Activity className="h-4 w-4 text-primary-foreground" />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold text-foreground">System Status</p>
-                            <p className="text-[10px] text-muted-foreground">All systems operational</p>
+                            <p className="text-xs font-semibold text-primary-foreground">System Status</p>
+                            <p className="text-[10px] text-primary-foreground/80">All systems operational</p>
                         </div>
                     </div>
                 </div>

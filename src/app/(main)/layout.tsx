@@ -44,7 +44,7 @@ export default async function MainLayout({
                 </div>
             </div>
             <div className="flex flex-col h-screen overflow-hidden">
-                <Header user={user} timezone={timezone} />
+                <Header user={user} timezone={timezone} companyName={companyName} />
                 <main className="flex-1 overflow-y-auto p-4 lg:p-6 pt-2 space-y-6 scrollbar-hide">
                     {children}
                 </main>
