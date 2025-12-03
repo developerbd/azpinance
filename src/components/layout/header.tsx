@@ -22,11 +22,14 @@ export function Header({ user, timezone, companyName }: HeaderProps) {
     const paths = pathname.split('/').filter(Boolean);
 
     return (
-        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 px-4 md:px-6 transition-all">
+        <header className="sticky top-0 z-50 flex h-14 md:h-16 items-center gap-4 px-4 md:px-6 transition-all">
             {/* Mobile Nav Trigger */}
             <div className="flex flex-1 items-center gap-4 bg-background/60 backdrop-blur-xl border border-border/40 shadow-sm rounded-full px-4 py-2 mt-4 mx-2">
                 {/* Mobile Nav Trigger */}
                 <MobileNav companyName={companyName} />
+
+                {/* Mobile Clock - Left side next to menu */}
+                <Clock timezone={timezone} className="md:hidden items-start mr-0 ml-2" />
 
                 {/* Breadcrumbs */}
                 <nav className="hidden md:flex items-center text-xs text-muted-foreground/70 font-medium tracking-wide uppercase">
@@ -66,7 +69,7 @@ export function Header({ user, timezone, companyName }: HeaderProps) {
                 </div>
 
                 <div className="flex items-center gap-1 pl-3 border-l border-border/10">
-                    <Clock timezone={timezone} />
+                    <Clock timezone={timezone} className="hidden md:flex" />
                     <NotificationsBell />
                     <ModeToggle />
                     <UserNav user={user} />

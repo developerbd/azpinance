@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 
+import { cn } from '@/lib/utils';
+
 interface ClockProps {
     timezone?: string;
+    className?: string;
 }
 
-export function Clock({ timezone = 'UTC' }: ClockProps) {
+export function Clock({ timezone = 'UTC', className }: ClockProps) {
     const [time, setTime] = useState<Date | null>(null);
 
     useEffect(() => {
@@ -35,9 +38,9 @@ export function Clock({ timezone = 'UTC' }: ClockProps) {
     }).format(time);
 
     return (
-        <div className="flex flex-col items-end text-sm text-muted-foreground mr-4">
+        <div className={cn("flex flex-col items-end text-sm text-muted-foreground mr-4", className)}>
             <span className="font-medium text-foreground">{formattedTime}</span>
-            <span className="text-xs">{formattedDate}</span>
+            <span className="text-xs whitespace-nowrap">{formattedDate}</span>
         </div>
     );
 }
