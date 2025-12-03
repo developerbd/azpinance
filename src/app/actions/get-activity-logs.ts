@@ -67,6 +67,6 @@ export async function getActivityLogs(
         return { error: error.message };
     }
 
-    console.log('Fetched logs:', data?.length, 'Total:', count);
+
     return { data, count };
 }

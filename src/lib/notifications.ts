@@ -128,7 +128,7 @@ export async function notifyAdmins({
                                         </div>
                                     `,
                                 });
-                                console.log(`Email sent to ${email}`);
+
                             } else {
                                 console.warn('SMTP settings not configured, skipping email.');
                             }
@@ -140,7 +140,7 @@ export async function notifyAdmins({
 
                 // WhatsApp (Simulation)
                 if (setting.whatsapp_enabled && setting.whatsapp_number) {
-                    console.log(`[SIMULATION] Sending WhatsApp to ${setting.whatsapp_number}:`, { title, message });
+
                 }
             }
         }

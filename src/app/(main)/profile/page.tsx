@@ -177,7 +177,7 @@ export default function ProfilePage() {
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        console.log("Starting profile update...");
+
 
         const updates = {
             full_name: fullName,

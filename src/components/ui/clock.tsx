@@ -10,10 +10,9 @@ export function Clock({ timezone = 'UTC' }: ClockProps) {
     const [time, setTime] = useState<Date | null>(null);
 
     useEffect(() => {
-        setTime(new Date());
-        const timer = setInterval(() => {
-            setTime(new Date());
-        }, 1000);
+        const updateTime = () => setTime(new Date());
+        updateTime();
+        const timer = setInterval(updateTime, 1000);
         return () => clearInterval(timer);
     }, []);
 

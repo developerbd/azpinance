@@ -6,7 +6,7 @@ interface LogActivityParams {
     action: string;
     entityType: string;
     entityId?: string;
-    details?: any;
+    details?: Record<string, unknown> | null;
     ipAddress?: string;
     userAgent?: string;
 }
@@ -46,23 +46,23 @@ export async function logActivity({
     if (error) {
         console.error('Error logging activity:', error);
         // Don't throw, just log error to avoid breaking the main flow
-    } else {
-        console.log('Activity logged successfully:', action, entityType, entityId);
     }
 }
 
-function sanitizeDetails(details: any): any {
+function sanitizeDetails(details: unknown): unknown {
     if (!details) return details;
     if (typeof details !== 'object') return details;
 
     const sensitiveKeys = ['password', 'token', 'secret', 'credit_card', 'cvv', 'api_key'];
-    const sanitized = { ...details };
+    const sanitized = { ...(details as Record<string, unknown>) };
 
     for (const key in sanitized) {
-        if (sensitiveKeys.some(k => key.toLowerCase().includes(k))) {
-            sanitized[key] = '***REDACTED***';
-        } else if (typeof sanitized[key] === 'object') {
-            sanitized[key] = sanitizeDetails(sanitized[key]);
+        if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
+            if (sensitiveKeys.some(k => key.toLowerCase().includes(k))) {
+                sanitized[key] = '***REDACTED***';
+            } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+                sanitized[key] = sanitizeDetails(sanitized[key]);
+            }
         }
     }
 
