@@ -24,7 +24,7 @@ export function Header({ user, timezone, companyName }: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 flex h-14 md:h-16 items-center gap-4 px-4 md:px-6 transition-all">
             {/* Mobile Nav Trigger */}
-            <div className="flex flex-1 items-center gap-4 bg-background/60 backdrop-blur-xl border border-border/40 shadow-sm rounded-full px-4 py-2 mt-4 mx-2">
+            <div className="flex flex-1 items-center gap-4 bg-background/60 backdrop-blur-xl border border-border/40 dark:border-white/10 shadow-sm rounded-full px-4 py-2 mt-4 mx-2">
                 {/* Mobile Nav Trigger */}
                 <MobileNav companyName={companyName} />
 

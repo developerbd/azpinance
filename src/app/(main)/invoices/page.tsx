@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Plus, FileText, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/ui/page-header';
+import { InvoicesList } from '@/components/invoices/invoices-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,14 @@ export default async function InvoicesPage() {
             default: return 'bg-slate-100 text-slate-800';
         }
     };
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user?.id)
+        .single();
 
     return (
         <div className="container mx-auto p-2 space-y-6">
@@ -53,58 +62,7 @@ export default async function InvoicesPage() {
                     <CardTitle className="text-lg font-semibold tracking-tight">Recent Documents</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="hover:bg-transparent border-border/40">
-                                <TableHead className="pl-6">Number</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Due Date</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right pr-6">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {invoices && invoices.length > 0 ? (
-                                invoices.map((invoice: any) => (
-                                    <TableRow key={invoice.id} className="hover:bg-muted/30 border-border/40">
-                                        <TableCell className="font-medium pl-6">{invoice.invoice_number}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={invoice.type === 'invoice' ? 'border-emerald-500/20 text-emerald-600 bg-emerald-500/5' : 'border-rose-500/20 text-rose-600 bg-rose-500/5'}>
-                                                {invoice.type === 'invoice' ? 'Invoice' : 'Bill'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">{invoice.contacts?.name || 'Unknown'}</TableCell>
-                                        <TableCell className="text-muted-foreground">{format(new Date(invoice.issue_date), 'MMM d, yyyy')}</TableCell>
-                                        <TableCell className="text-muted-foreground">{format(new Date(invoice.due_date), 'MMM d, yyyy')}</TableCell>
-                                        <TableCell className="font-bold text-foreground">
-                                            {invoice.currency} {Number(invoice.total_amount).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge className={getStatusColor(invoice.status)} variant="outline">
-                                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6">
-                                            <Link href={`/invoices/${invoice.id}`}>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary rounded-full">
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                                        No invoices found. Create one to get started.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                    <InvoicesList invoices={invoices || []} userRole={profile?.role || 'guest'} />
                 </CardContent>
             </Card>
         </div>

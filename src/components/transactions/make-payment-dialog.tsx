@@ -40,7 +40,8 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
                     .from('financial_accounts')
                     .select('id, name, currency')
                     .eq('category', 'third_party')
-                    .eq('contact_id', supplierId);
+                    .eq('contact_id', supplierId)
+                    .eq('status', 'active'); // Filter inactive accounts
 
                 if (data) setAccounts(data);
             };

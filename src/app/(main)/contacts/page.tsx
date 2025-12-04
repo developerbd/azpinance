@@ -36,6 +36,7 @@ import { getContactsWithDue } from '@/app/actions/get-contacts-with-due';
 import { updateContactStatus } from '@/app/actions/update-contact-status';
 import { deleteContact } from '@/app/actions/delete-contact';
 import { MakePaymentDialog } from '@/components/transactions/make-payment-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function ContactsPage() {
     const [contacts, setContacts] = useState<any[]>([]);
@@ -44,6 +45,9 @@ export default function ContactsPage() {
     const [typeFilter, setTypeFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [contactToDelete, setContactToDelete] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
     const supabase = createClient();
 
     useEffect(() => {
@@ -107,10 +111,16 @@ export default function ContactsPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this contact?')) return;
+    const confirmDelete = (id: string) => {
+        setContactToDelete(id);
+        setDeleteDialogOpen(true);
+    };
 
-        const result = await deleteContact(id);
+    const handleDelete = async () => {
+        if (!contactToDelete) return;
+        setDeleting(true);
+
+        const result = await deleteContact(contactToDelete);
 
         if (result.error) {
             toast.error(result.error);
@@ -118,6 +128,9 @@ export default function ContactsPage() {
             toast.success('Contact deleted');
             fetchContacts();
         }
+        setDeleting(false);
+        setDeleteDialogOpen(false);
+        setContactToDelete(null);
     };
 
     const canEdit = userRole === 'admin';
@@ -271,7 +284,7 @@ export default function ContactsPage() {
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
                                                                 className="text-red-600 focus:text-red-600"
-                                                                onClick={() => handleDelete(contact.id)}
+                                                                onClick={() => confirmDelete(contact.id)}
                                                             >
                                                                 <Trash className="mr-2 h-4 w-4" /> Delete
                                                             </DropdownMenuItem>
@@ -287,6 +300,15 @@ export default function ContactsPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title="Delete Contact"
+                description="Are you sure you want to delete this contact? This action cannot be undone."
+                onConfirm={handleDelete}
+                loading={deleting}
+            />
         </div>
     );
 }

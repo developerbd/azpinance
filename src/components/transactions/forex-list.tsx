@@ -33,6 +33,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ExportMenu } from '@/components/common/export-menu';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 
 type ForexTransaction = {
     id: string;
@@ -244,8 +245,116 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
 
     const totalPages = Math.ceil(totalCount / pageSize);
 
+    // Bulk Selection State
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+    // Toggle single row selection
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    // Toggle select all
+    const toggleSelectAll = () => {
+        if (selectedIds.length === transactions.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(transactions.map(tx => tx.id));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} transactions?`)) return;
+
+        setIsBulkDeleting(true);
+        try {
+            const { bulkDeleteForexTransactions } = await import('@/app/actions/bulk-delete-forex');
+            const result = await bulkDeleteForexTransactions(selectedIds);
+
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success('Transactions deleted successfully');
+                setSelectedIds([]);
+                router.refresh();
+            }
+        } catch (error) {
+            toast.error('Failed to delete transactions');
+        } finally {
+            setIsBulkDeleting(false);
+        }
+    };
+
+
+
+
+
+
+    const handleBulkExport = async (type: 'xlsx' | 'pdf') => {
+        const selectedData = transactions.filter(tx => selectedIds.includes(tx.id));
+
+        try {
+            if (type === 'pdf') {
+                const jsPDF = (await import('jspdf')).default;
+                const autoTable = (await import('jspdf-autotable')).default;
+
+                const doc = new jsPDF();
+                doc.text('Selected Forex Transactions', 14, 10);
+
+                const tableData = selectedData.map(tx => [
+                    tx.transaction_date ? format(new Date(tx.transaction_date), 'dd-MM-yyyy') : '-',
+                    tx.transaction_id || '-',
+                    tx.contacts?.name || '-',
+                    tx.account_type,
+                    tx.amount.toFixed(2),
+                    tx.exchange_rate.toFixed(2),
+                    tx.amount_bdt.toFixed(2),
+                    tx.status
+                ]);
+
+                autoTable(doc, {
+                    head: [['Date', 'Tx ID', 'Contact', 'Account', 'Amount (USD)', 'Rate', 'Amount (BDT)', 'Status']],
+                    body: tableData,
+                    startY: 20,
+                });
+
+                doc.save(`selected-forex-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+            } else {
+                const XLSX = await import('xlsx');
+                const worksheet = XLSX.utils.json_to_sheet(selectedData.map(tx => ({
+                    Date: tx.transaction_date ? format(new Date(tx.transaction_date), 'dd-MM-yyyy') : '-',
+                    'Transaction ID': tx.transaction_id || '-',
+                    Contact: tx.contacts?.name || '-',
+                    Account: tx.account_type,
+                    'Amount (USD)': tx.amount,
+                    Rate: tx.exchange_rate,
+                    'Amount (BDT)': tx.amount_bdt,
+                    Status: tx.status,
+                    Note: tx.note || '-'
+                })));
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Selected Forex');
+                XLSX.writeFile(workbook, `selected-forex-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            }
+            toast.success('Export successful');
+        } catch (e) {
+            toast.error('Export failed');
+        }
+    };
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+            <BulkActionsToolbar
+                selectedCount={selectedIds.length}
+                onDelete={isAdmin ? handleBulkDelete : undefined}
+                onExport={handleBulkExport}
+                onCancel={() => setSelectedIds([])}
+                loading={isBulkDeleting}
+            />
+
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-4 items-end md:items-center justify-between bg-muted/20 p-4 rounded-lg">
                 <div className="flex flex-wrap gap-4 items-center w-full">
@@ -309,7 +418,15 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="pl-4">Date</TableHead>
+                                <TableHead className="w-[40px] pl-4">
+                                    <input
+                                        type="checkbox"
+                                        className="translate-y-[2px]"
+                                        checked={selectedIds.length === transactions.length && transactions.length > 0}
+                                        onChange={toggleSelectAll}
+                                    />
+                                </TableHead>
+                                <TableHead>Date</TableHead>
                                 <TableHead>Tx ID</TableHead>
                                 <TableHead>Contact</TableHead>
                                 <TableHead>Account</TableHead>
@@ -329,8 +446,16 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                                 </TableRow>
                             ) : (
                                 transactions.map((tx) => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell className="pl-4">{tx.transaction_date ? format(new Date(tx.transaction_date), 'dd-MM-yyyy') : format(new Date(tx.created_at), 'dd-MM-yyyy')}</TableCell>
+                                    <TableRow key={tx.id} data-state={selectedIds.includes(tx.id) ? "selected" : undefined}>
+                                        <TableCell className="pl-4">
+                                            <input
+                                                type="checkbox"
+                                                className="translate-y-[2px]"
+                                                checked={selectedIds.includes(tx.id)}
+                                                onChange={() => toggleSelection(tx.id)}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{tx.transaction_date ? format(new Date(tx.transaction_date), 'dd-MM-yyyy') : format(new Date(tx.created_at), 'dd-MM-yyyy')}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.transaction_id || '-'}</TableCell>
                                         <TableCell>{tx.contacts?.name || 'Unknown'}</TableCell>
                                         <TableCell className="capitalize">{tx.account_type}</TableCell>

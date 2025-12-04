@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { logActivity } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
+import { notifyAdmins } from '@/lib/notifications';
 
 export async function createFinancialAccount(data: any) {
     const supabase = await createClient();
@@ -31,6 +32,14 @@ export async function createFinancialAccount(data: any) {
         entityType: 'FINANCIAL_ACCOUNT',
         entityId: account.id,
         details: { name: account.name, type: account.type }
+    });
+
+    // Notify Admins
+    await notifyAdmins({
+        title: 'New Financial Account Created',
+        message: `A new ${account.type} account "${account.name}" has been created by ${user.email}.`,
+        type: 'info',
+        link: `/accounts/${account.id}`
     });
 
     revalidatePath('/accounts');

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error';
@@ -44,7 +45,17 @@ export async function notifyAdmins({
     type,
     link,
 }: Omit<CreateNotificationParams, 'userId'>) {
-    const supabase = await createClient();
+    // Use Service Role Client if available to bypass RLS
+    let supabase;
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        supabase = createSupabaseClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+    } else {
+        console.warn('SUPABASE_SERVICE_ROLE_KEY not found. Notifications might fail due to RLS.');
+        supabase = await createClient();
+    }
 
     // Fetch all admins
     const { data: admins } = await supabase
@@ -76,22 +87,30 @@ export async function notifyAdmins({
             .in('user_id', adminIds);
 
         if (settings) {
+            // Collect unique Discord webhooks
+            const discordWebhooks = new Set<string>();
             for (const setting of settings) {
-                // Discord
                 if (setting.discord_enabled && setting.discord_webhook_url) {
-                    try {
-                        await fetch(setting.discord_webhook_url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                content: `**${title}**\n${message}\n${link ? `[View Link](${process.env.NEXT_PUBLIC_APP_URL}${link})` : ''}`,
-                            }),
-                        });
-                    } catch (err) {
-                        console.error('Failed to send Discord notification', err);
-                    }
+                    discordWebhooks.add(setting.discord_webhook_url);
                 }
+            }
 
+            // Send Discord notifications
+            for (const webhookUrl of discordWebhooks) {
+                try {
+                    await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            content: `**${title}**\n${message}\n${link ? `[View Link](${process.env.NEXT_PUBLIC_APP_URL}${link})` : ''}`,
+                        }),
+                    });
+                } catch (err) {
+                    console.error('Failed to send Discord notification', err);
+                }
+            }
+
+            for (const setting of settings) {
                 // Email (Real Sending)
                 if (setting.email_enabled) {
                     const email = setting.email_address || admins.find(a => a.id === setting.user_id)?.email;

@@ -28,6 +28,7 @@ export default function NewSupplierPaymentPage() {
                 .from('contacts')
                 .select('id, name')
                 .eq('type', 'supplier')
+                .eq('status', 'active') // Filter inactive suppliers
                 .order('name');
 
             if (data) {

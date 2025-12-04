@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const forexTransactionSchema = z.object({
     contact_id: z.string().uuid({ message: "Invalid Contact ID" }),
     account_type: z.enum(['bank', 'mfs', 'crypto', 'wallet', 'credit_card', 'paypal', 'payoneer', 'wise', 'cash', 'other'], { message: "Invalid Account Type" }),
-    currency: z.string().min(3).max(3, { message: "Currency must be 3 characters (e.g. USD)" }),
+    currency: z.string().min(3).max(10, { message: "Currency must be between 3 and 10 characters" }),
     amount: z.number().positive({ message: "Amount must be positive" }),
     exchange_rate: z.number().positive({ message: "Exchange rate must be positive" }),
     amount_bdt: z.number().positive({ message: "Amount BDT must be positive" }),

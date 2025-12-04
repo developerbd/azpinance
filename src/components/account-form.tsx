@@ -38,7 +38,11 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
 
     useEffect(() => {
         const fetchContacts = async () => {
-            const { data } = await supabase.from('contacts').select('id, name').eq('type', 'supplier');
+            const { data } = await supabase
+                .from('contacts')
+                .select('id, name')
+                .eq('type', 'supplier')
+                .eq('status', 'active');
             if (data) setContacts(data);
         };
         fetchContacts();
@@ -117,6 +121,10 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
                     <div className="space-y-2">
                         <Label>SWIFT Code</Label>
                         <Input value={details.swift_code || ''} onChange={(e) => handleDetailChange('swift_code', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Routing Number</Label>
+                        <Input value={details.routing_number || ''} onChange={(e) => handleDetailChange('routing_number', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label>Address</Label>
@@ -319,6 +327,10 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
                     <div className="space-y-2">
                         <Label>SWIFT / BIC</Label>
                         <Input value={details.swift_code || ''} onChange={(e) => handleDetailChange('swift_code', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Routing Number</Label>
+                        <Input value={details.routing_number || ''} onChange={(e) => handleDetailChange('routing_number', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label>Address</Label>

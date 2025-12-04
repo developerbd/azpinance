@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import CustomFieldInput from './custom-field-input';
 import { FileUpload } from './file-upload';
 import { ArrowLeft } from 'lucide-react';
+import { notifyContactCreated } from '@/app/actions/notify-contact-created';
 
 interface ContactFormProps {
   contact?: any;
@@ -61,9 +62,19 @@ export function ContactForm({ contact, mode = 'edit' }: ContactFormProps) {
         .eq('id', contact.id);
       error = updateError;
     } else {
-      const { error: insertError } = await supabase
+      const { data: newContact, error: insertError } = await supabase
         .from('contacts')
-        .insert([data]);
+        .insert([data])
+        .select()
+        .single();
+
+      if (!insertError && newContact) {
+        await notifyContactCreated({
+          contactId: newContact.id,
+          contactName: newContact.name,
+          contactType: newContact.type
+        });
+      }
       error = insertError;
     }
 
