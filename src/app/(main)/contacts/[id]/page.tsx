@@ -46,7 +46,7 @@ export default async function ViewContactPage(props: { params: Promise<{ id: str
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold">{contact.name}</h1>
+                        <h1 className="text-2xl font-heading font-semibold tracking-tight">{contact.name}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="capitalize">{contact.type}</Badge>
                             <Badge className={contact.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>

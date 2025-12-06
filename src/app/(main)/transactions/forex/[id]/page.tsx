@@ -30,7 +30,7 @@ export default async function ForexTransactionPage({ params }: { params: Promise
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="text-3xl font-bold mb-6">Edit Forex Record</h1>
+            <h1 className="text-2xl font-heading font-semibold tracking-tight mb-6">Edit Forex Record</h1>
             <ForexForm contacts={contacts || []} initialData={transaction} />
         </div>
     );

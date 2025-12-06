@@ -96,72 +96,54 @@ export function ActivityLogTable() {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Activity Logs</h2>
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+                <h1 className="text-2xl font-heading font-semibold tracking-tight">Activity Log</h1>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-row gap-2 items-center w-full xl:w-auto">
+                    <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
+                        <SelectTrigger className="w-full lg:w-[150px] h-9">
+                            <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Actions</SelectItem>
+                            <SelectItem value="CREATE">Create</SelectItem>
+                            <SelectItem value="UPDATE">Update</SelectItem>
+                            <SelectItem value="DELETE">Delete</SelectItem>
+                            <SelectItem value="LOGIN">Login</SelectItem>
+                            <SelectItem value="PURGE_CACHE">Purge Cache</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={userId} onValueChange={(val) => { setUserId(val); setPage(1); }}>
+                        <SelectTrigger className="w-full lg:w-[150px] h-9">
+                            <SelectValue placeholder="User" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Users</SelectItem>
+                            {users.map(u => (
+                                <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                        className="w-full lg:w-auto h-9"
+                    />
+
+                    <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                        className="w-full lg:w-auto h-9"
+                    />
+
+                    <Button variant="outline" size="icon" onClick={fetchLogs} title="Refresh" className="shrink-0 h-9 w-9">
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
-
-            {/* Filters */}
-            <Card>
-                <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="space-y-1">
-                            <span className="text-sm font-medium">Action Type</span>
-                            <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
-                                <SelectTrigger className="w-[200px]">
-                                    <SelectValue placeholder="All Actions" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Actions</SelectItem>
-                                    <SelectItem value="CREATE">Create</SelectItem>
-                                    <SelectItem value="UPDATE">Update</SelectItem>
-                                    <SelectItem value="DELETE">Delete</SelectItem>
-                                    <SelectItem value="LOGIN">Login</SelectItem>
-                                    <SelectItem value="PURGE_CACHE">Purge Cache</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                            <span className="text-sm font-medium">User</span>
-                            <Select value={userId} onValueChange={(val) => { setUserId(val); setPage(1); }}>
-                                <SelectTrigger className="w-[200px]">
-                                    <SelectValue placeholder="All Users" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Users</SelectItem>
-                                    {users.map(u => (
-                                        <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                            <span className="text-sm font-medium">From Date</span>
-                            <Input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-                                className="w-[150px]"
-                            />
-                        </div>
-
-                        <div className="space-y-1">
-                            <span className="text-sm font-medium">To Date</span>
-                            <Input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-                                className="w-[150px]"
-                            />
-                        </div>
-
-                        <Button variant="outline" size="icon" onClick={fetchLogs} title="Refresh">
-                            <RefreshCw className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
 
             {/* Table */}
             <div className="rounded-md border bg-card">

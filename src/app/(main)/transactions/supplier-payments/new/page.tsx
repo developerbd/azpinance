@@ -51,7 +51,7 @@ export default function NewSupplierPaymentPage() {
         <RoleGuard allowedRoles={['admin', 'supervisor', 'accountant']}>
             <div className="container mx-auto py-10 max-w-3xl">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold">New Supplier Payment</h1>
+                    <h1 className="text-2xl font-heading font-semibold tracking-tight">New Supplier Payment</h1>
                     <p className="text-muted-foreground">Select a supplier to initiate a payment.</p>
                 </div>
 

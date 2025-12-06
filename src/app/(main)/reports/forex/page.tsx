@@ -51,7 +51,7 @@ export default async function ReportsPage({
         <div className="container mx-auto py-10 space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Forex Reports</h1>
+                    <h1 className="text-2xl font-heading font-semibold tracking-tight">Forex Reports</h1>
                     <p className="text-muted-foreground">
                         Insights and analytics for {from} to {to}
                     </p>

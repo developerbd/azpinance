@@ -124,36 +124,64 @@ export function NotificationsBell() {
                     ) : (
                         <div className="divide-y">
                             {notifications.map((notification) => (
-                                <div
+                                <NotificationItem
                                     key={notification.id}
-                                    className={cn(
-                                        "p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                                        !notification.read && "bg-muted/20"
-                                    )}
-                                    onClick={() => markAsRead(notification.id)}
-                                >
-                                    <div className="flex justify-between gap-2 mb-1">
-                                        <span className={cn(
-                                            "text-xs font-medium px-1.5 py-0.5 rounded",
-                                            notification.type === 'info' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-                                            notification.type === 'success' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-                                            notification.type === 'warning' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-                                            notification.type === 'error' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-                                        )}>
-                                            {notification.type}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                                        </span>
-                                    </div>
-                                    <h5 className="text-sm font-medium leading-none mb-1">{notification.title}</h5>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
-                                </div>
+                                    notification={notification}
+                                    onRead={() => markAsRead(notification.id)}
+                                />
                             ))}
                         </div>
                     )}
                 </ScrollArea>
             </PopoverContent>
         </Popover>
+    );
+}
+
+function NotificationItem({ notification, onRead }: { notification: Notification; onRead: () => void }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleClick = () => {
+        setIsExpanded(!isExpanded);
+        if (!notification.read) {
+            onRead();
+        }
+    };
+
+    return (
+        <div
+            className={cn(
+                "p-4 hover:bg-muted/50 transition-colors cursor-pointer",
+                !notification.read && "bg-muted/20"
+            )}
+            onClick={handleClick}
+        >
+            <div className="flex justify-between gap-2 mb-1">
+                <span className={cn(
+                    "text-xs font-medium px-1.5 py-0.5 rounded",
+                    notification.type === 'info' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                    notification.type === 'success' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+                    notification.type === 'warning' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                    notification.type === 'error' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                )}>
+                    {notification.type}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                </span>
+            </div>
+            <h5 className="text-sm font-medium leading-none mb-1">{notification.title}</h5>
+            <p className={cn(
+                "text-sm text-muted-foreground transition-all",
+                !isExpanded && "line-clamp-2"
+            )}>
+                {notification.message}
+            </p>
+            {notification.link && isExpanded && (
+                <Link href={notification.link} className="text-xs text-primary hover:underline mt-2 inline-block">
+                    View Details
+                </Link>
+            )}
+        </div>
     );
 }

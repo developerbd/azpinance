@@ -231,7 +231,7 @@ export default function ProfilePage() {
 
     return (
         <div className="container mx-auto py-10 max-w-2xl">
-            <h1 className="mb-6 text-3xl font-bold">My Profile</h1>
+            <h1 className="mb-6 text-2xl font-heading font-semibold tracking-tight">My Profile</h1>
 
             <div className="grid gap-6">
                 {/* Profile Information */}

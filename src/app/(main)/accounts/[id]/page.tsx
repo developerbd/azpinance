@@ -46,7 +46,7 @@ export default async function ViewAccountPage(props: { params: Promise<{ id: str
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold">{account.name}</h1>
+                        <h1 className="text-2xl font-heading font-semibold tracking-tight">{account.name}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline" className="capitalize">{account.scope}</Badge>
                             <Badge variant="secondary" className="capitalize">{account.type?.replace('_', ' ')}</Badge>

@@ -36,7 +36,7 @@ export default async function IntegrationsSettingsPage() {
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="mb-6 text-3xl font-bold">Integrations & SEO</h1>
+            <h1 className="mb-6 text-2xl font-heading font-semibold tracking-tight">Integrations & SEO</h1>
             <Card>
                 <CardHeader>
                     <CardTitle>External Tools</CardTitle>

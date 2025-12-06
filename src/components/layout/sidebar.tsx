@@ -19,6 +19,7 @@ import {
     Plus,
     Activity,
     Zap,
+    AlertTriangle,
 } from 'lucide-react';
 import {
     Collapsible,
@@ -135,6 +136,8 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
     const pathname = usePathname();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [gracePeriodStart, setGracePeriodStart] = useState<string | null>(null);
+    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
     const supabase = createClient();
 
     useEffect(() => {
@@ -153,10 +156,12 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
             if (user) {
                 const { data: profile } = await supabase
                     .from('users')
-                    .select('role')
+                    .select('role, admin_grace_period_start')
                     .eq('id', user.id)
                     .single();
                 setUserRole(profile?.role || 'guest');
+                setGracePeriodStart(profile?.admin_grace_period_start || null);
+                setIs2FAEnabled(user.factors?.some(f => f.status === 'verified') ?? false);
             }
         };
         fetchRole();
@@ -237,6 +242,16 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                                         <div className="flex items-center gap-3 z-10">
                                             <Icon className={cn("h-4 w-4 transition-transform duration-300 group-hover:scale-110", isActive && "fill-current/20")} />
                                             <span className="text-[13px] tracking-wide">{item.title}</span>
+                                            {item.title === 'Settings' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && (
+                                                <AlertTriangle
+                                                    className={cn(
+                                                        "h-3.5 w-3.5 animate-pulse ml-2",
+                                                        (new Date().getTime() - new Date(gracePeriodStart).getTime()) / (1000 * 3600 * 24) > 7
+                                                            ? "text-red-500"
+                                                            : "text-orange-500"
+                                                    )}
+                                                />
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-1 z-10">
                                             {isOpen ? (
@@ -261,6 +276,18 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                                                     )}
                                                 >
                                                     {subItem.title}
+                                                    {subItem.title === 'Security' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && (
+                                                        <span className="ml-2 inline-flex">
+                                                            <AlertTriangle
+                                                                className={cn(
+                                                                    "h-3.5 w-3.5 animate-pulse",
+                                                                    (new Date().getTime() - new Date(gracePeriodStart).getTime()) / (1000 * 3600 * 24) > 7
+                                                                        ? "text-red-500"
+                                                                        : "text-orange-500"
+                                                                )}
+                                                            />
+                                                        </span>
+                                                    )}
                                                 </Link>
                                                 {/* @ts-ignore */}
                                                 {subItem.action && (

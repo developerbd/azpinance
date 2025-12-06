@@ -15,7 +15,7 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-                <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-heading font-semibold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                     Good {getHoursGreeting()}, {userName}
                 </h1>
                 <p className="text-muted-foreground font-medium mt-1">

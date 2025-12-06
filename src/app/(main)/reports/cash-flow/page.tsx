@@ -30,7 +30,7 @@ export default function CashFlowReportPage() {
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="text-3xl font-bold mb-2">Liquidity Forecast</h1>
+            <h1 className="text-2xl font-heading font-semibold tracking-tight mb-2">Liquidity Forecast</h1>
             <p className="text-muted-foreground mb-8">
                 Projected <strong>USD Inflow</strong> vs <strong>BDT Liability</strong> for the next 30 days.
             </p>
@@ -44,7 +44,7 @@ export default function CashFlowReportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-foreground tracking-tight">
+                        <div className="text-3xl font-semibold text-foreground tracking-tight">
                             ৳{summary?.immediate_payables_bdt?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}
                         </div>
                         <p className="text-[10px] font-medium text-muted-foreground mt-1 uppercase tracking-wide">Total BDT owed to suppliers</p>
@@ -58,7 +58,7 @@ export default function CashFlowReportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-foreground tracking-tight">
+                        <div className="text-3xl font-semibold text-foreground tracking-tight">
                             ${summary?.avg_daily_usd_inflow?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}
                         </div>
                         <p className="text-[10px] font-medium text-muted-foreground mt-1 uppercase tracking-wide">Projected USD Inflow / Day</p>
@@ -72,7 +72,7 @@ export default function CashFlowReportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-foreground tracking-tight">
+                        <div className="text-3xl font-semibold text-foreground tracking-tight">
                             ৳{summary?.avg_exchange_rate?.toFixed(2) || '0'}
                         </div>
                         <p className="text-[10px] font-medium text-muted-foreground mt-1 uppercase tracking-wide">Avg Buy Rate (Last 30d)</p>
@@ -86,7 +86,7 @@ export default function CashFlowReportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-foreground tracking-tight">
+                        <div className="text-3xl font-semibold text-foreground tracking-tight">
                             ৳{summary?.projected_30d_liability_bdt?.toLocaleString(undefined, { maximumFractionDigits: 0, notation: 'compact' }) || '0'}
                         </div>
                         <p className="text-[10px] font-medium text-muted-foreground mt-1 uppercase tracking-wide">Est. new debt from projected inflow</p>

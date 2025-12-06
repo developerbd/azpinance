@@ -139,7 +139,7 @@ export default function ContactsPage() {
     return (
         <div className="container mx-auto py-10">
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="text-3xl font-bold">Contacts</h1>
+                <h1 className="text-2xl font-heading font-semibold tracking-tight">Contacts</h1>
                 {canEdit && (
                     <Link href="/contacts/new">
                         <Button>

@@ -26,7 +26,7 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                     </Button>
                 </Link>
                 <div className="flex-1">
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                    <h1 className="text-2xl font-heading font-semibold tracking-tight flex items-center gap-2">
                         {invoice.invoice_number}
                         <Badge variant="outline">{invoice.status}</Badge>
                     </h1>

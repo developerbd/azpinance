@@ -17,7 +17,7 @@ export default async function EditContactPage(props: { params: Promise<{ id: str
 
     return (
         <div className="container mx-auto max-w-2xl py-10">
-            <h1 className="mb-6 text-3xl font-bold">Edit Contact</h1>
+            <h1 className="mb-6 text-2xl font-heading font-semibold tracking-tight">Edit Contact</h1>
             <ContactForm contact={contact} />
         </div>
     );

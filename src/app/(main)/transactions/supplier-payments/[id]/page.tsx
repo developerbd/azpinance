@@ -35,7 +35,7 @@ export default async function EditSupplierPaymentPage({ params }: PageProps) {
                 <Link href="/transactions/supplier-payments" className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
                     <ChevronLeft className="h-4 w-4 mr-1" /> Back to Payments
                 </Link>
-                <h1 className="text-3xl font-bold">Edit Payment</h1>
+                <h1 className="text-2xl font-heading font-semibold tracking-tight">Edit Payment</h1>
                 <p className="text-muted-foreground">
                     Payment to <span className="font-medium text-foreground">{payment.supplier?.name}</span>
                 </p>

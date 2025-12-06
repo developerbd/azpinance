@@ -40,7 +40,7 @@ export default async function GeneralSettingsPage() {
 
     return (
         <div className="container mx-auto py-10">
-            <h1 className="mb-6 text-3xl font-bold">General Settings</h1>
+            <h1 className="mb-6 text-2xl font-heading font-semibold tracking-tight">General Settings</h1>
 
             <Card>
                 <CardHeader>

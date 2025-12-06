@@ -170,8 +170,8 @@ export default function SupplierPaymentsReportPage() {
     return (
         <div className="container mx-auto py-10 space-y-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <h1 className="text-3xl font-bold">Supplier Payments Report</h1>
-                <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-heading font-semibold tracking-tight">Supplier Payments Report</h1>
+                <div className="flex items-end gap-2">
                     <div className="space-y-1">
                         <Label className="text-xs">From</Label>
                         <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

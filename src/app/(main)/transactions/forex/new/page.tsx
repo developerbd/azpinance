@@ -9,7 +9,7 @@ export default function NewForexTransactionPage() {
         <RoleGuard allowedRoles={['admin', 'supervisor', 'accountant']}>
             <div className="container mx-auto py-10 max-w-3xl">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold">New Forex Transaction</h1>
+                    <h1 className="text-2xl font-heading font-semibold tracking-tight">New Forex Transaction</h1>
                     <p className="text-muted-foreground">Record a new forex transaction.</p>
                 </div>
 

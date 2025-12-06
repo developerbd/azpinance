@@ -5,11 +5,14 @@ import { UserNav } from '@/components/layout/user-nav';
 import { Clock } from '@/components/ui/clock';
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import { NotificationsBell } from '@/components/layout/notifications-bell';
-import { Search, ChevronRight, Home } from 'lucide-react';
+import { Search, ChevronRight, Home, Crown, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { MobileNav } from '@/components/layout/mobile-nav';
+import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
     user: User;
@@ -20,6 +23,16 @@ interface HeaderProps {
 export function Header({ user, timezone, companyName }: HeaderProps) {
     const pathname = usePathname();
     const paths = pathname.split('/').filter(Boolean);
+    const [userDetails, setUserDetails] = useState<any>(null);
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
+            if (data) setUserDetails(data);
+        };
+        fetchRole();
+    }, [user.id]);
 
     return (
         <header className="sticky top-0 z-50 flex h-14 md:h-16 items-center gap-4 px-4 md:px-6 transition-all">
@@ -68,8 +81,27 @@ export function Header({ user, timezone, companyName }: HeaderProps) {
                     />
                 </div>
 
+                {/* Role Badge */}
+                <div className="hidden md:flex items-center mx-2">
+                    <span className={cn(
+                        "flex items-center gap-1.5 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border shadow-sm",
+                        // Admin: Red/Rose
+                        userDetails?.role === 'admin' && "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800/50",
+                        // Supervisor: Blue
+                        userDetails?.role === 'supervisor' && "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50",
+                        // Staff / Default: Slate
+                        !['admin', 'supervisor'].includes(userDetails?.role) && "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                    )}>
+                        {userDetails?.role === 'admin' && <Crown className="h-3 w-3 mb-0.5" />}
+                        {userDetails?.role === 'supervisor' && <ShieldCheck className="h-3 w-3 mb-0.5" />}
+                        {!['admin', 'supervisor'].includes(userDetails?.role) && <UserIcon className="h-3 w-3 mb-0.5" />}
+                        {userDetails?.role || 'Guest'}
+                    </span>
+                </div>
+
                 <div className="flex items-center gap-1 pl-3 border-l border-border/10">
                     <Clock timezone={timezone} className="hidden md:flex" />
+
                     <NotificationsBell />
                     <ModeToggle />
                     <UserNav user={user} />

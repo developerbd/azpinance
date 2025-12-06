@@ -24,7 +24,7 @@ export default async function SupplierPaymentsPage() {
     return (
         <div className="container mx-auto py-10">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Supplier Payments</h1>
+                <h1 className="text-2xl font-heading font-semibold tracking-tight">Supplier Payments</h1>
                 {canAdd && (
                     <Link href="/transactions/supplier-payments/new">
                         <Button>

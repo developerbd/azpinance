@@ -107,7 +107,7 @@ export default function AdminUserProfilePage() {
                 </Link>
             </div>
 
-            <h1 className="mb-6 text-3xl font-bold">Edit User Profile</h1>
+            <h1 className="mb-6 text-2xl font-heading font-semibold tracking-tight">Edit User Profile</h1>
 
             <Card>
                 <CardHeader>
