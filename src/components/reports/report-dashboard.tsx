@@ -3,16 +3,18 @@
 import { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VolumeTrendChart, ContactVolumeChart, StatusPieChart } from './report-charts';
-import { DollarSign, TrendingUp, Users, Activity, Download, Loader2 } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Activity, Download, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 interface ReportDashboardProps {
     data: any;
 }
 
 export function ReportDashboard({ data }: ReportDashboardProps) {
+    const router = useRouter();
     const reportRef = useRef<HTMLDivElement>(null);
     const [exporting, setExporting] = useState(false);
 
@@ -50,6 +52,9 @@ export function ReportDashboard({ data }: ReportDashboardProps) {
                 pdf.save(`forex-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
             } else {
                 const XLSX = await import('xlsx');
+                // Sanitize data for security
+                const { sanitizeDataForExcel } = await import('@/lib/excel-utils');
+
                 const wb = XLSX.utils.book_new();
 
                 // Sheet 1: Summary
@@ -89,6 +94,10 @@ export function ReportDashboard({ data }: ReportDashboardProps) {
     return (
         <div className="space-y-6">
             <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => router.refresh()} disabled={exporting}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                </Button>
                 <Button variant="outline" onClick={() => handleExport('pdf')} disabled={exporting}>
                     {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     PDF

@@ -28,7 +28,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import Link from 'next/link';
-import { Plus, MoreHorizontal, Search, Edit, Trash, Ban, CheckCircle } from 'lucide-react';
+import { Plus, MoreHorizontal, Search, Edit, Trash, Ban, CheckCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
@@ -170,6 +170,9 @@ export default function ContactsPage() {
                         <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                 </Select>
+                <Button variant="outline" size="icon" onClick={fetchContacts} title="Refresh">
+                    <RefreshCw className="h-4 w-4" />
+                </Button>
             </div>
 
             <div className="rounded-md border">

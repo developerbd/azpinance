@@ -55,3 +55,23 @@ export const createUserSchema = z.object({
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export const digitalExpenseSchema = z.object({
+    transaction_id: z.string().optional().or(z.literal('')),
+    title: z.string().min(1, { message: "Title is required" }),
+    category: z.string().min(1, { message: "Category is required" }),
+    vendor_platform: z.string().optional().or(z.literal('')),
+    is_recurring: z.boolean().default(false),
+    frequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+    amount_usd: z.number().positive({ message: "Amount must be positive" }),
+    payment_method: z.string().default('Payoneer Card'),
+    transaction_date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format" }),
+    next_renewal_date: z.string().optional().or(z.literal('')),
+    status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
+    attachment_url: z.string().optional().or(z.literal('')),
+}).refine(data => !data.is_recurring || !!data.frequency, {
+    message: "Frequency is required for recurring expenses",
+    path: ["frequency"]
+});
+
+export type DigitalExpenseInput = z.infer<typeof digitalExpenseSchema>;

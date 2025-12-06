@@ -36,6 +36,23 @@ export function LiquidityChartWidget({ data }: LiquidityChartWidgetProps) {
                                 axisLine={false}
                                 tick={{ fontSize: 10, fill: '#888' }}
                             />
+                            <YAxis
+                                yAxisId="left"
+                                tickFormatter={(value) => `৳${(value / 1000000).toFixed(1)}M`}
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{ fontSize: 10, fill: '#888' }}
+                                width={50}
+                            />
+                            <YAxis
+                                yAxisId="right"
+                                orientation="right"
+                                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{ fontSize: 10, fill: '#888' }}
+                                width={40}
+                            />
                             <Tooltip
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                                 labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
@@ -45,6 +62,7 @@ export function LiquidityChartWidget({ data }: LiquidityChartWidgetProps) {
                                 }}
                             />
                             <Area
+                                yAxisId="left"
                                 type="monotone"
                                 dataKey="cumulative_liability_bdt"
                                 name="BDT Liability"
@@ -54,6 +72,7 @@ export function LiquidityChartWidget({ data }: LiquidityChartWidgetProps) {
                                 strokeWidth={2}
                             />
                             <Area
+                                yAxisId="right"
                                 type="monotone"
                                 dataKey="cumulative_usd"
                                 name="USD Inflow"

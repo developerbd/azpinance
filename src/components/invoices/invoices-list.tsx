@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, MoreHorizontal, Trash } from 'lucide-react';
+import { FileText, MoreHorizontal, Trash, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
@@ -202,7 +202,15 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
 
     return (
         <div className="relative space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => router.refresh()}
+                    title="Refresh"
+                >
+                    <RefreshCw className="h-4 w-4" />
+                </Button>
                 <ExportMenu onExport={handleExport} isExporting={isExporting} />
             </div>
 

@@ -27,7 +27,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Search, Edit, MoreHorizontal, Trash, Ban, CheckCircle } from 'lucide-react';
+import { Plus, Search, Edit, MoreHorizontal, Trash, Ban, CheckCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -176,6 +176,9 @@ export default function AccountsPage() {
                         <SelectItem value="crypto">Crypto</SelectItem>
                     </SelectContent>
                 </Select>
+                <Button variant="outline" size="icon" onClick={fetchAccounts} title="Refresh">
+                    <RefreshCw className="h-4 w-4" />
+                </Button>
             </div>
 
             <div className="rounded-md border">

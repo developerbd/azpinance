@@ -1,5 +1,5 @@
 'use client';
-
+import { SystemStatus } from './system-status';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,30 @@ const items = [
                 title: 'Invoices & Bills',
                 href: '/invoices',
             },
+        ],
+    },
+    {
+        title: 'Digital Expenses',
+        href: '/digital-expenses',
+        icon: Zap,
+        submenu: [
+            {
+                title: 'All Expenses',
+                href: '/digital-expenses',
+                action: {
+                    icon: Plus,
+                    href: '/digital-expenses/new',
+                },
+            },
+            {
+                title: 'Recurring',
+                href: '/digital-expenses/recurring',
+            },
+            {
+                title: 'Reports & Analytics',
+                href: '/digital-expenses/analytics',
+                icon: BarChart3
+            }
         ],
     },
     {
@@ -135,9 +159,10 @@ const items = [
 export function Sidebar({ companyName = 'BizAd', className }: { companyName?: string; className?: string }) {
     const pathname = usePathname();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
-    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string>('guest');
     const [gracePeriodStart, setGracePeriodStart] = useState<string | null>(null);
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+    const [urgentRenewalsCount, setUrgentRenewalsCount] = useState(0);
     const supabase = createClient();
 
     useEffect(() => {
@@ -164,7 +189,13 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                 setIs2FAEnabled(user.factors?.some(f => f.status === 'verified') ?? false);
             }
         };
+        const fetchBadge = async () => {
+            const { getUrgentRenewalsCount } = await import('@/app/actions/digital-expenses/get-urgent-count');
+            const count = await getUrgentRenewalsCount();
+            setUrgentRenewalsCount(count);
+        };
         fetchRole();
+        fetchBadge();
     }, []);
 
     const toggleMenu = (title: string) => {
@@ -175,11 +206,38 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
     };
 
     const filteredItems = items.map(item => {
+        // Explicitly hide Reports for guest users immediately
+        if (item.title === 'Reports') {
+            if (userRole === 'guest') return null;
+        }
+        if (item.title === 'Activity Log') {
+            if (userRole !== 'admin') return null;
+        }
+
+        if (item.title === 'Settings' && item.submenu) {
+            let filteredSubmenu = item.submenu;
+            if (['admin', 'supervisor'].includes(userRole)) {
+                // Admin and Supervisor see everything (no filtering needed)
+            } else if (userRole === 'accountant') {
+                filteredSubmenu = filteredSubmenu.filter(sub =>
+                    ['General', 'Integrations', 'Notifications'].includes(sub.title)
+                );
+            } else {
+                // Everyone else (Guest, unknown, etc.) ONLY sees General
+                filteredSubmenu = filteredSubmenu.filter(sub => sub.title === 'General');
+            }
+            return { ...item, submenu: filteredSubmenu };
+        }
+
         if (item.submenu) {
             let filteredSubmenu = item.submenu;
             if (userRole === 'guest') {
                 if (item.title === 'Transactions') return null;
             }
+            filteredSubmenu = filteredSubmenu.filter(sub => {
+                if (sub.title === 'Reports & Analytics' && userRole === 'guest') return false;
+                return true;
+            });
             filteredSubmenu = filteredSubmenu.map(sub => {
                 if ((sub as any).action) {
                     if (userRole === 'guest') {
@@ -197,9 +255,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                 }
             }
         }
-        if (item.title === 'Activity Log') {
-            if (userRole !== 'admin') return null;
-        }
+
         return item;
     }).filter(Boolean) as typeof items;
 
@@ -242,6 +298,11 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                                         <div className="flex items-center gap-3 z-10">
                                             <Icon className={cn("h-4 w-4 transition-transform duration-300 group-hover:scale-110", isActive && "fill-current/20")} />
                                             <span className="text-[13px] tracking-wide">{item.title}</span>
+                                            {item.title === 'Digital Expenses' && urgentRenewalsCount > 0 && (
+                                                <span className="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white rounded-full animate-pulse shadow-sm">
+                                                    {urgentRenewalsCount}
+                                                </span>
+                                            )}
                                             {item.title === 'Settings' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && (
                                                 <AlertTriangle
                                                     className={cn(
@@ -341,19 +402,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                 })}
             </nav>
 
-            <div className="p-4 mt-auto">
-                <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl shadow-lg shadow-primary/20">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                            <Activity className="h-4 w-4 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-semibold text-primary-foreground">System Status</p>
-                            <p className="text-[10px] text-primary-foreground/80">All systems operational</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <SystemStatus />
         </div>
     );
 }

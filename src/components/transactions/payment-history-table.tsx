@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, Loader2, Filter, X, MoreHorizontal, Edit, Trash } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Filter, X, MoreHorizontal, Edit, Trash, RefreshCw } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -309,6 +309,9 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                             </div>
                             <Button variant="outline" size="icon" onClick={clearFilters} title="Clear Filters">
                                 <X className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={() => fetchPayments()} title="Refresh">
+                                <RefreshCw className="h-4 w-4" />
                             </Button>
                             <ExportMenu onExport={handleExport} isExporting={isExporting} />
                         </div>

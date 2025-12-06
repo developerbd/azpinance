@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +37,8 @@ export function UserNav({ user }: { user: any }) {
     }, [user, supabase]);
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
-        router.refresh();
+        const { signOutAction } = await import('@/app/actions/auth');
+        await signOutAction();
     };
 
     const displayName = profile?.full_name || profile?.username || user?.email?.split('@')[0] || 'User';
@@ -83,13 +83,17 @@ export function UserNav({ user }: { user: any }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push('/profile')}>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                    <DropdownMenuItem asChild>
+                        <Link href="/profile" className="cursor-pointer w-full flex items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                        </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/settings')}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
+                    <DropdownMenuItem asChild>
+                        <Link href="/settings/general" className="cursor-pointer w-full flex items-center">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
+                        </Link>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

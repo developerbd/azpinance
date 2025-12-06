@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,9 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
     const [receivingAccountId, setReceivingAccountId] = useState<string>(initialData?.receiving_account_id || '');
     const [uploading, setUploading] = useState(false);
 
+    // Track if rate was auto-calculated to maintain calculation mode
+    const rateAutoCalculated = useRef(false);
+
     useEffect(() => {
         const fetchAccounts = async () => {
             const { data } = await supabase
@@ -104,7 +107,17 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
     // Calculations
     const handleAmountChange = (val: string) => {
         setAmount(val);
-        if (val && rate) {
+        // If we have BDT amount and (Rate is blank OR Rate was auto-calculated), calculate Rate
+        if (val && amountBdt && (!rate || rateAutoCalculated.current)) {
+            const valFloat = parseFloat(val);
+            const bdtFloat = parseFloat(amountBdt);
+            if (valFloat !== 0) {
+                const newRate = bdtFloat / valFloat;
+                setRate(newRate.toFixed(2));
+                rateAutoCalculated.current = true;
+            }
+        } else if (val && rate) {
+            // Standard: Have Rate, Calc BDT
             const calculated = parseFloat(val) * parseFloat(rate);
             setAmountBdt(calculated.toFixed(2));
         }
@@ -112,6 +125,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
     const handleRateChange = (val: string) => {
         setRate(val);
+        rateAutoCalculated.current = false; // User manually set rate, disable auto-calc mode
         if (val && amount) {
             const calculated = parseFloat(amount) * parseFloat(val);
             setAmountBdt(calculated.toFixed(2));
@@ -120,7 +134,17 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
     const handleBdtChange = (val: string) => {
         setAmountBdt(val);
-        if (val && rate) {
+        // If we have USD amount and (Rate is blank OR Rate was auto-calculated), calculate Rate
+        if (val && amount && (!rate || rateAutoCalculated.current)) {
+            const valFloat = parseFloat(val);
+            const amountFloat = parseFloat(amount);
+            if (amountFloat !== 0) {
+                const newRate = valFloat / amountFloat;
+                setRate(newRate.toFixed(2));
+                rateAutoCalculated.current = true;
+            }
+        } else if (val && rate) {
+            // Standard: Have Rate, Calc USD
             const calculated = parseFloat(val) / parseFloat(rate);
             setAmount(calculated.toFixed(2));
         }

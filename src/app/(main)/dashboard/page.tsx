@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getComprehensiveDashboardStats } from '@/app/actions/get-comprehensive-dashboard-stats';
+import { getUpcomingRenewals } from '@/app/actions/digital-expenses/get-upcoming-renewals';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { MetricsGrid } from '@/components/dashboard/metrics-grid';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
+import { UpcomingRenewalsWidget } from '@/components/digital-expenses/upcoming-renewals-widget';
 import dynamic from 'next/dynamic';
 
 const LiquidityChartWidget = dynamic(() => import('@/components/dashboard/liquidity-chart-widget').then(mod => mod.LiquidityChartWidget), {
@@ -21,8 +23,11 @@ export default async function DashboardPage() {
         return redirect('/login');
     }
 
-    // Fetch Comprehensive Stats
-    const stats = await getComprehensiveDashboardStats();
+    // Fetch Comprehensive Stats & Renewals
+    const [stats, renewals] = await Promise.all([
+        getComprehensiveDashboardStats(),
+        getUpcomingRenewals()
+    ]);
 
     return (
         <div className="container mx-auto p-2 space-y-6">
@@ -43,6 +48,11 @@ export default async function DashboardPage() {
                 <div className="lg:col-span-1 h-[400px]">
                     <ActivityFeed activities={stats.recent_activity} />
                 </div>
+            </div>
+
+            {/* Upcoming Renewals */}
+            <div className="w-full">
+                <UpcomingRenewalsWidget renewals={renewals} />
             </div>
         </div>
     );

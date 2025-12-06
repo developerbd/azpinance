@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
             }
         } else {
             // Non-Compliant
-            let graceStart = admin.admin_grace_period_start ? new Date(admin.admin_grace_period_start) : null;
+            const graceStart = admin.admin_grace_period_start ? new Date(admin.admin_grace_period_start) : null;
 
             // If checking a "Legacy" admin who doesn't have a start time, set it to NOW.
             if (!graceStart) {

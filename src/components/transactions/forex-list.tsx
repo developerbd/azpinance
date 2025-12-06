@@ -28,7 +28,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash, CheckCircle, DollarSign, Search, Filter, X, Square } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash, CheckCircle, DollarSign, Search, Filter, X, Square, RefreshCw } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -213,7 +213,10 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                 doc.save(`forex-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
             } else {
                 const XLSX = await import('xlsx');
-                const worksheet = XLSX.utils.json_to_sheet(data.map(tx => ({
+                // Sanitize data for security
+                const { sanitizeDataForExcel } = await import('@/lib/excel-utils');
+
+                const formattedData = data.map(tx => ({
                     Date: tx.transaction_date ? format(new Date(tx.transaction_date), 'dd-MM-yyyy') : '-',
                     'Transaction ID': tx.transaction_id || '-',
                     Contact: tx.contacts?.name || '-',
@@ -223,9 +226,12 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                     'Amount (BDT)': tx.amount_bdt,
                     Status: tx.status,
                     Note: tx.note || '-'
-                })));
+                }));
+
+                const sanitizedData = sanitizeDataForExcel(formattedData);
 
                 const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(sanitizedData);
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'Forex Transactions');
 
                 if (type === 'csv') {
@@ -402,7 +408,16 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                         </Button>
                     )}
 
-                    <div className="ml-auto">
+                    <div className="ml-auto flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => router.refresh()}
+                            title="Refresh"
+                            className="h-9 w-9"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </Button>
                         <ExportMenu onExport={handleExport} isExporting={isExporting} />
                     </div>
                 </div>

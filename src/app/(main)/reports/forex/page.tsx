@@ -21,6 +21,16 @@ export default async function ReportsPage({
         redirect('/login');
     }
 
+    const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || profile.role === 'guest') {
+        redirect('/dashboard');
+    }
+
     // Default to current month
     const now = new Date();
     const defaultFrom = format(startOfMonth(now), 'yyyy-MM-dd');
