@@ -28,6 +28,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { createClient } from "@/lib/supabase/server";
+import { ChatWidget } from "@/components/ai/chat-widget";
 
 export default async function RootLayout({
   children,
@@ -59,6 +60,7 @@ export default async function RootLayout({
           {children}
           <Toaster />
           <SpeedInsights />
+          <ChatWidget />
         </ThemeProvider>
       </body>
     </html>

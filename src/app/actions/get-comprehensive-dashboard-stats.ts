@@ -24,23 +24,26 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // 1. Fetch Core Data
+    // 1. Fetch Core Data with limits to prevent excessive data fetching
     const { data: forexData } = await supabase
         .from('forex_transactions')
         .select('id, amount, amount_bdt, transaction_date, status, contact_id')
         .eq('status', 'approved')
-        .order('transaction_date', { ascending: false });
+        .order('transaction_date', { ascending: false })
+        .limit(1000); // Reasonable limit for performance
 
     const { data: invoices } = await supabase
         .from('invoices')
         .select('id, total_amount, status, due_date, created_at, invoice_number')
         .neq('status', 'paid')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500); // Limit unpaid invoices
 
     const { data: payments } = await supabase
         .from('supplier_payments')
         .select('id, amount, date, supplier_id')
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .limit(1000); // Limit payments
 
     // 2. Calculate Metrics
 
@@ -125,7 +128,7 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     // 3. Chart Data (Reuse existing logic)
     const forecast = await getCashFlowForecast(30);
 
-    // 4. Recent Activity Feed (Merge & Sort)
+    // 4. Recent Activity Feed (Merge & Sort) - Only top 10 for performance
     const recentForex = (forexData || []).slice(0, 5).map(tx => ({
         type: 'forex',
         id: tx.id,
