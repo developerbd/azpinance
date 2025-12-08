@@ -4,29 +4,53 @@ import { createClient } from '@/lib/supabase/server';
 import { logActivity } from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { notifyAdmins } from '@/lib/notifications';
+import { FinancialAccountSchema, type FinancialAccountInput } from '@/lib/validations';
+import { z } from 'zod';
 
-export async function createFinancialAccount(data: any) {
+export async function createFinancialAccount(data: unknown) {
     const supabase = await createClient();
 
-    // 1. Check Auth
+    // 1. Check Authentication
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         return { error: 'Unauthorized' };
     }
 
-    // 2. Insert Account
-    const { data: account, error } = await supabase
+    // 2. Check Authorization (Admin/Supervisor only)
+    const { data: profile } = await supabase
+        .from('users')
+        .select('role, full_name')
+        .eq('id', user.id)
+        .single();
+
+    if (!['admin', 'supervisor'].includes(profile?.role)) {
+        return { error: 'Permission denied. Only admins and supervisors can create financial accounts.' };
+    }
+
+    // 3. Validate Input
+    let validatedData: FinancialAccountInput;
+    try {
+        validatedData = FinancialAccountSchema.parse(data);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return { error: error.errors[0].message };
+        }
+        return { error: 'Invalid input data' };
+    }
+
+    // 4. Create Account
+    const { data: account, error: insertError } = await supabase
         .from('financial_accounts')
-        .insert([data])
+        .insert([validatedData])
         .select()
         .single();
 
-    if (error) {
-        console.error('Error creating financial account:', error);
-        return { error: error.message };
+    if (insertError) {
+        console.error('Error creating financial account:', insertError);
+        return { error: 'Failed to create account' };
     }
 
-    // 3. Log Activity
+    // 5. Log Activity
     await logActivity({
         action: 'CREATE',
         entityType: 'FINANCIAL_ACCOUNT',
@@ -34,10 +58,10 @@ export async function createFinancialAccount(data: any) {
         details: { name: account.name, type: account.type }
     });
 
-    // Notify Admins
+    // 6. Notify Admins
     await notifyAdmins({
         title: 'New Financial Account Created',
-        message: `A new ${account.type} account "${account.name}" has been created by ${user.email}.`,
+        message: `A new ${account.type} account "${account.name}" has been created by ${profile?.full_name || user.email}.`,
         type: 'info',
         link: `/accounts/${account.id}`
     });

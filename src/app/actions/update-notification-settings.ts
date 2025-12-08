@@ -1,18 +1,13 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
 
 interface UpdateSettingsParams {
     email_enabled: boolean;
-    whatsapp_enabled: boolean;
-    discord_enabled: boolean;
-    discord_webhook_url?: string;
-    whatsapp_number?: string;
-    email_address?: string;
+    email_address: string;
 }
 
-export async function updateNotificationSettings(params: UpdateSettingsParams) {
+export async function updateNotificationSettings(settings: UpdateSettingsParams) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -24,8 +19,10 @@ export async function updateNotificationSettings(params: UpdateSettingsParams) {
         .from('notification_settings')
         .upsert({
             user_id: user.id,
-            ...params,
-            updated_at: new Date().toISOString(),
+            email_enabled: settings.email_enabled,
+            email_address: settings.email_address,
+        }, {
+            onConflict: 'user_id'
         });
 
     if (error) {
@@ -33,6 +30,5 @@ export async function updateNotificationSettings(params: UpdateSettingsParams) {
         return { error: 'Failed to update settings' };
     }
 
-    revalidatePath('/settings/notifications');
     return { success: true };
 }

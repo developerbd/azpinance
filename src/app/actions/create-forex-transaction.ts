@@ -2,60 +2,66 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { logActivity } from '@/lib/logger';
 import { notifyAdmins } from '@/lib/notifications';
+import { logActivity } from '@/lib/logger';
+import { ForexTransactionSchema, type ForexTransactionInput } from '@/lib/validations';
+import { z } from 'zod';
 
-import { forexTransactionSchema } from '@/lib/schemas';
-
-export async function createForexTransaction(data: any) {
+export async function createForexTransaction(data: unknown) {
     const supabase = await createClient();
 
-    // Check auth
+    // 1. Check Authentication
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Unauthorized' };
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
 
-    // Check role
+    // 2. Validate Input
+    let validatedData: ForexTransactionInput;
+    try {
+        validatedData = ForexTransactionSchema.parse(data);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return { error: error.errors[0].message };
+        }
+        return { error: 'Invalid input data' };
+    }
+
+    // 3. Get user profile for notification
     const { data: profile } = await supabase
         .from('users')
-        .select('role, full_name')
+        .select('full_name')
         .eq('id', user.id)
         .single();
 
-    if (!['accountant', 'supervisor', 'admin'].includes(profile?.role)) {
-        return { error: 'Permission denied' };
-    }
-
-    // Validate data
-    const validation = forexTransactionSchema.safeParse(data);
-    if (!validation.success) {
-        return { error: validation.error.issues[0].message };
-    }
-
-    const { error } = await supabase
+    // 4. Create Transaction
+    const { data: transaction, error: insertError } = await supabase
         .from('forex_transactions')
-        .insert({
-            ...validation.data,
-            status: 'pending',
-            payment_status: 'processing'
-        });
+        .insert([{ ...validatedData, user_id: user.id }])
+        .select()
+        .single();
 
-    if (error) return { error: error.message };
+    if (insertError) {
+        console.error('Error creating forex transaction:', insertError);
+        return { error: 'Failed to create transaction' };
+    }
 
-    // Log activity
+    // 5. Log Activity
     await logActivity({
         action: 'CREATE',
         entityType: 'FOREX_TRANSACTION',
-        details: { amount: validation.data.amount, currency: validation.data.currency, contact_id: validation.data.contact_id }
+        entityId: transaction.id,
+        details: { amount: validatedData.amount, currency: validatedData.currency }
     });
 
-    // Notify Admins
+    // 6. Notify Admins
     await notifyAdmins({
         title: 'New Forex Transaction',
-        message: `A new transaction of ${validation.data.amount} ${validation.data.currency} has been created by ${profile?.full_name || 'a user'}.`,
+        message: `A new transaction of ${validatedData.amount} ${validatedData.currency} has been created by ${profile?.full_name || user.email}.`,
         type: 'info',
         link: '/transactions/forex'
     });
 
     revalidatePath('/transactions/forex');
-    return { success: true };
+    return { success: true, data: transaction };
 }

@@ -17,10 +17,6 @@ export default function NotificationSettingsClient() {
 
     const [settings, setSettings] = useState({
         email_enabled: false,
-        whatsapp_enabled: false,
-        discord_enabled: false,
-        discord_webhook_url: '',
-        whatsapp_number: '',
         email_address: '',
     });
 
@@ -32,10 +28,6 @@ export default function NotificationSettingsClient() {
             } else {
                 setSettings({
                     email_enabled: data.email_enabled || false,
-                    whatsapp_enabled: data.whatsapp_enabled || false,
-                    discord_enabled: data.discord_enabled || false,
-                    discord_webhook_url: data.discord_webhook_url || '',
-                    whatsapp_number: data.whatsapp_number || '',
                     email_address: data.email_address || '',
                 });
             }
@@ -66,44 +58,10 @@ export default function NotificationSettingsClient() {
                 <p className="text-sm text-muted-foreground">
                     Configure how you want to receive alerts and notifications.
                 </p>
+                <p className="text-sm text-amber-600 mt-2">
+                    💡 Discord notifications are now configured system-wide in Settings → Integrations
+                </p>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        Discord Integration
-                    </CardTitle>
-                    <CardDescription>
-                        Receive real-time alerts in your Discord server via Webhooks.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="discord-toggle" className="flex flex-col gap-1">
-                            <span>Enable Discord Notifications</span>
-                            <span className="font-normal text-xs text-muted-foreground">Send alerts to a Discord channel</span>
-                        </Label>
-                        <Switch
-                            id="discord-toggle"
-                            checked={settings.discord_enabled}
-                            onCheckedChange={(checked) => setSettings(s => ({ ...s, discord_enabled: checked }))}
-                        />
-                    </div>
-                    {settings.discord_enabled && (
-                        <div className="space-y-2">
-                            <Label>Webhook URL</Label>
-                            <Input
-                                placeholder="https://discord.com/api/webhooks/..."
-                                value={settings.discord_webhook_url}
-                                onChange={(e) => setSettings(s => ({ ...s, discord_webhook_url: e.target.value }))}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Go to Server Settings &gt; Integrations &gt; Webhooks to create one.
-                            </p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
 
             <Card>
                 <CardHeader>
@@ -132,38 +90,9 @@ export default function NotificationSettingsClient() {
                                 value={settings.email_address}
                                 onChange={(e) => setSettings(s => ({ ...s, email_address: e.target.value }))}
                             />
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>WhatsApp Notifications</CardTitle>
-                    <CardDescription>
-                        Receive alerts directly on WhatsApp.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="whatsapp-toggle" className="flex flex-col gap-1">
-                            <span>Enable WhatsApp Notifications</span>
-                            <span className="font-normal text-xs text-muted-foreground">Send alerts to a Discord channel</span>
-                        </Label>
-                        <Switch
-                            id="whatsapp-toggle"
-                            checked={settings.whatsapp_enabled}
-                            onCheckedChange={(checked) => setSettings(s => ({ ...s, whatsapp_enabled: checked }))}
-                        />
-                    </div>
-                    {settings.whatsapp_enabled && (
-                        <div className="space-y-2">
-                            <Label>WhatsApp Number</Label>
-                            <Input
-                                placeholder="+88017..."
-                                value={settings.whatsapp_number}
-                                onChange={(e) => setSettings(s => ({ ...s, whatsapp_number: e.target.value }))}
-                            />
+                            <p className="text-xs text-muted-foreground">
+                                Leave empty to use your account email
+                            </p>
                         </div>
                     )}
                 </CardContent>

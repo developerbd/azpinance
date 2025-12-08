@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/lib/logger';
+import { notifyAdmins } from '@/lib/notifications';
 
 export async function deleteDigitalExpense(id: string) {
     const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function deleteDigitalExpense(id: string) {
 
     const { data: profile } = await supabase
         .from('users')
-        .select('role')
+        .select('role, full_name')
         .eq('id', user.id)
         .single();
 
@@ -20,6 +21,13 @@ export async function deleteDigitalExpense(id: string) {
     if (profile?.role !== 'admin') {
         return { error: 'Permission denied. Only Admins can delete expenses.' };
     }
+
+    // Get expense details before deletion
+    const { data: expense } = await supabase
+        .from('digital_expenses')
+        .select('title, amount_usd')
+        .eq('id', id)
+        .single();
 
     const { error } = await supabase
         .from('digital_expenses')
@@ -31,7 +39,15 @@ export async function deleteDigitalExpense(id: string) {
     await logActivity({
         action: 'DELETE',
         entityType: 'DIGITAL_EXPENSE',
-        details: { id }
+        details: { id, title: expense?.title }
+    });
+
+    // Notify Admins
+    await notifyAdmins({
+        title: 'Digital Expense Deleted',
+        message: `Expense "${expense?.title}" ($${expense?.amount_usd}) has been deleted by ${profile?.full_name || 'an admin'}.`,
+        type: 'warning',
+        link: '/digital-expenses'
     });
 
     revalidatePath('/digital-expenses');

@@ -24,6 +24,17 @@ export async function updateUserRole(userId: string, newRole: string) {
         return { error: 'Forbidden: Admin or Supervisor access required' };
     }
 
+    // Check if target user is super admin
+    const { data: targetUser } = await supabase
+        .from('users')
+        .select('role, is_super_admin')
+        .eq('id', userId)
+        .single();
+
+    if (targetUser?.is_super_admin) {
+        return { error: 'Cannot modify super admin role' };
+    }
+
     // Supervisor restrictions
     if (currentUserProfile?.role === 'supervisor') {
         // Cannot promote to Admin or Supervisor
@@ -32,12 +43,6 @@ export async function updateUserRole(userId: string, newRole: string) {
         }
 
         // Cannot modify Admin or Supervisor users
-        const { data: targetUser } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', userId)
-            .single();
-
         if (!targetUser || ['admin', 'supervisor'].includes(targetUser.role)) {
             return { error: 'Forbidden: Supervisors cannot modify Admin or Supervisor accounts' };
         }
@@ -72,47 +77,57 @@ export async function updateUserRole(userId: string, newRole: string) {
                 // User does NOT have 2FA
                 const { data: targetUserProfile } = await adminSupabase
                     .from('users')
-                    .select('admin_grace_period_start')
+                    .select('admin_grace_period_start, is_2fa_exempt')
                     .eq('id', userId)
                     .single();
 
-                const gracePeriodStart = targetUserProfile?.admin_grace_period_start ? new Date(targetUserProfile.admin_grace_period_start) : null;
-                const now = new Date();
+                // Check if user is exempt from 2FA requirements
+                if (targetUserProfile?.is_2fa_exempt) {
+                    // User is exempt from 2FA, just update role without grace period or notifications
+                    const { error } = await adminSupabase
+                        .from('users')
+                        .update({
+                            role: newRole,
+                            admin_grace_period_start: null // Clear any existing grace period
+                        })
+                        .eq('id', userId);
+                    if (error) throw error;
+                } else {
+                    // User is NOT exempt, apply normal 2FA policy
+                    const gracePeriodStart = targetUserProfile?.admin_grace_period_start ? new Date(targetUserProfile.admin_grace_period_start) : null;
+                    const now = new Date();
 
-                if (gracePeriodStart) {
-                    const daysDiff = (now.getTime() - gracePeriodStart.getTime()) / (1000 * 3600 * 24);
-                    if (daysDiff > 7) {
-                        return { error: 'User has exceeded the 7-day 2FA grace period. They must enable 2FA before being made Admin.' };
+                    if (gracePeriodStart) {
+                        const daysDiff = (now.getTime() - gracePeriodStart.getTime()) / (1000 * 3600 * 24);
+                        if (daysDiff > 7) {
+                            return { error: 'User has exceeded the 7-day 2FA grace period. They must enable 2FA before being made Admin.' };
+                        }
                     }
+
+                    // If existing grace period is active OR this is a fresh start (null), we allow (continuing or starting grace period)
+                    // If it was null, we set it to NOW.
+                    const newGraceStart = gracePeriodStart ? undefined : new Date().toISOString(); // undefined means don't update if exists
+
+                    const updateData: any = { role: newRole };
+                    if (newGraceStart) {
+                        updateData.admin_grace_period_start = newGraceStart;
+                    }
+
+                    const { error } = await adminSupabase
+                        .from('users')
+                        .update(updateData)
+                        .eq('id', userId);
+                    if (error) throw error;
+
+                    // Send Warning Notification
+                    await adminSupabase.from('notifications').insert({
+                        user_id: userId,
+                        title: 'Action Required: Enable 2FA',
+                        message: 'You have been promoted to Admin. You have 7 days to enable Two-Factor Authentication (2FA), otherwise you will be demoted to Supervisor.',
+                        type: 'warning',
+                        link: '/profile'
+                    });
                 }
-
-                // If existing grace period is active OR this is a fresh start (null), we allow (continuing or starting grace period)
-                // If it was null, we set it to NOW.
-                const newGraceStart = gracePeriodStart ? undefined : new Date().toISOString(); // undefined means don't update if exists
-
-                const updateData: any = { role: newRole };
-                if (newGraceStart) {
-                    updateData.admin_grace_period_start = newGraceStart;
-                }
-
-                const { error } = await adminSupabase
-                    .from('users')
-                    .update(updateData)
-                    .eq('id', userId);
-                if (error) throw error;
-
-                // Send Warning Notification
-                // We'll use a simplified notification insertion here. Ideally use the notification helper if it supported direct email efficiently without recreating logic.
-                // For now, inserting into notifications table is the baseline requirement "get a notification immediately".
-                // Triggering the email would be better but requires logic duplication or a new helper.
-                // I'll stick to in-app notification + console log for now, and maybe add email trigger if I can import a helper easily.
-                await adminSupabase.from('notifications').insert({
-                    user_id: userId,
-                    title: 'Action Required: Enable 2FA',
-                    message: 'You have been promoted to Admin. You have 7 days to enable Two-Factor Authentication (2FA), otherwise you will be demoted to Supervisor.',
-                    type: 'warning',
-                    link: '/profile'
-                });
             }
 
         } else {

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/lib/logger';
+import { notifyAdmins } from '@/lib/notifications';
 
 export async function approveDigitalExpense(id: string, status: 'approved' | 'rejected') {
     const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function approveDigitalExpense(id: string, status: 'approved' | 're
 
     const { data: profile } = await supabase
         .from('users')
-        .select('role')
+        .select('role, full_name')
         .eq('id', user.id)
         .single();
 
@@ -22,7 +23,7 @@ export async function approveDigitalExpense(id: string, status: 'approved' | 're
 
     const { data: existing } = await supabase
         .from('digital_expenses')
-        .select('status')
+        .select('status, title, amount_usd, user_id')
         .eq('id', id)
         .single();
 
@@ -57,6 +58,14 @@ export async function approveDigitalExpense(id: string, status: 'approved' | 're
         action: status === 'approved' ? 'APPROVE' : 'REJECT',
         entityType: 'DIGITAL_EXPENSE',
         details: { id, status }
+    });
+
+    // Notify Admins
+    await notifyAdmins({
+        title: `Digital Expense ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+        message: `Expense "${existing?.title}" ($${existing?.amount_usd}) has been ${status} by ${profile?.full_name || 'a supervisor'}.`,
+        type: status === 'approved' ? 'success' : 'warning',
+        link: '/digital-expenses'
     });
 
     revalidatePath('/digital-expenses');

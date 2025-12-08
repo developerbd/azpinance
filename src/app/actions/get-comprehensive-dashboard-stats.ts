@@ -22,7 +22,12 @@ export interface DashboardStats {
 
 export async function getComprehensiveDashboardStats(): Promise<DashboardStats> {
     const supabase = await createClient();
+
+    // Check Authentication
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('Unauthorized');
+    }
 
     // 1. Fetch Core Data with limits to prevent excessive data fetching
     const { data: forexData } = await supabase

@@ -23,7 +23,18 @@ export async function deleteUser(userId: string) {
         return { error: 'Forbidden: Admin access required' };
     }
 
-    // 2. Delete user using Admin Client
+    // 2. Check if target user is super admin
+    const { data: targetUser } = await supabase
+        .from('users')
+        .select('is_super_admin')
+        .eq('id', userId)
+        .single();
+
+    if (targetUser?.is_super_admin) {
+        return { error: 'Cannot delete super admin account' };
+    }
+
+    // 3. Delete user using Admin Client
     try {
         const adminSupabase = createAdminClient();
 

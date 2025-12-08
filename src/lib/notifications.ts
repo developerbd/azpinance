@@ -78,25 +78,17 @@ export async function notifyAdmins({
             console.error('Error notifying admins:', error);
         }
 
-        // 2. External Notifications
-        // Fetch settings for all admins
-        const adminIds = admins.map(a => a.id);
-        const { data: settings } = await supabase
-            .from('notification_settings')
-            .select('*')
-            .in('user_id', adminIds);
+        // 2. External Notifications - System-Wide Settings
+        const { data: systemSettings } = await supabase
+            .from('system_settings')
+            .select('discord_enabled, discord_webhook_url')
+            .eq('id', 1)
+            .single();
 
-        if (settings) {
-            // Collect unique Discord webhooks
-            const discordWebhooks = new Set<string>();
-            for (const setting of settings) {
-                if (setting.discord_enabled && setting.discord_webhook_url) {
-                    discordWebhooks.add(setting.discord_webhook_url);
-                }
-            }
-
-            // Send Discord notifications
-            for (const webhookUrl of discordWebhooks) {
+        // Send Discord notification if enabled
+        if (systemSettings?.discord_enabled && systemSettings?.discord_webhook_url) {
+            const webhookUrl = systemSettings.discord_webhook_url.trim();
+            if (webhookUrl) {
                 try {
                     await fetch(webhookUrl, {
                         method: 'POST',
@@ -105,10 +97,21 @@ export async function notifyAdmins({
                             content: `**${title}**\n${message}\n${link ? `[View Link](${process.env.NEXT_PUBLIC_APP_URL}${link})` : ''}`,
                         }),
                     });
+                    console.log(`[Notifications] Discord notification sent to system webhook`);
                 } catch (err) {
                     console.error('Failed to send Discord notification', err);
                 }
             }
+        }
+
+        // 3. Email Notifications (Per-User)
+        const adminIds = admins.map(a => a.id);
+        const { data: settings } = await supabase
+            .from('notification_settings')
+            .select('*')
+            .in('user_id', adminIds);
+
+        if (settings) {
 
             for (const setting of settings) {
                 // Email (Real Sending)
@@ -155,11 +158,6 @@ export async function notifyAdmins({
                             console.error('Failed to send email:', err);
                         }
                     }
-                }
-
-                // WhatsApp (Simulation)
-                if (setting.whatsapp_enabled && setting.whatsapp_number) {
-
                 }
             }
         }

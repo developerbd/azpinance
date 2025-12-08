@@ -26,7 +26,7 @@ import {
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Trash, Ban, CheckCircle, UserPlus, Shield, Search, Filter, Edit, Eye, EyeOff } from 'lucide-react';
+import { MoreHorizontal, Trash, Ban, CheckCircle, UserPlus, Shield, Search, Filter, Edit, Eye, EyeOff, ShieldCheck, ShieldAlert } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -55,14 +55,17 @@ type User = {
     role: 'admin' | 'supervisor' | 'accountant' | 'guest';
     status: 'active' | 'suspended';
     created_at: string;
+    is_super_admin?: boolean;
+    is_2fa_exempt?: boolean;
 };
 
 interface UserListProps {
     initialUsers: User[];
     currentUserRole: string;
+    currentUserIsSuperAdmin: boolean;
 }
 
-export default function UserList({ initialUsers, currentUserRole }: UserListProps) {
+export default function UserList({ initialUsers, currentUserRole, currentUserIsSuperAdmin }: UserListProps) {
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [loading, setLoading] = useState(false);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -193,6 +196,28 @@ export default function UserList({ initialUsers, currentUserRole }: UserListProp
             }
         } catch (error) {
             toast.error('Failed to update role');
+            console.error(error);
+        }
+    };
+
+    const handleToggle2FAExemption = async (userId: string, currentExempt: boolean) => {
+        const targetUser = users.find(u => u.id === userId);
+        if (!targetUser || !currentUserIsSuperAdmin) return;
+
+        const newExempt = !currentExempt;
+
+        try {
+            const { toggle2FAExemption } = await import('@/app/actions/toggle-2fa-exemption');
+            const result = await toggle2FAExemption(userId, newExempt);
+
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                setUsers(users.map(u => u.id === userId ? { ...u, is_2fa_exempt: newExempt } : u));
+                toast.success(`2FA exemption ${newExempt ? 'granted' : 'revoked'}`);
+            }
+        } catch (error) {
+            toast.error('Failed to update 2FA exemption');
             console.error(error);
         }
     };
@@ -402,7 +427,19 @@ export default function UserList({ initialUsers, currentUserRole }: UserListProp
                                 </TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>
-                                    <Badge variant="outline" className="capitalize">{user.role}</Badge>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Badge variant="outline" className="capitalize">{user.role}</Badge>
+                                        {user.is_super_admin && (
+                                            <Badge className="bg-purple-600 hover:bg-purple-700 flex items-center gap-1">
+                                                <ShieldCheck className="h-3 w-3" /> Super Admin
+                                            </Badge>
+                                        )}
+                                        {user.is_2fa_exempt && !user.is_super_admin && (
+                                            <Badge variant="outline" className="border-amber-500 text-amber-600 flex items-center gap-1">
+                                                <ShieldAlert className="h-3 w-3" /> 2FA Exempt
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <Badge className={user.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
@@ -426,35 +463,51 @@ export default function UserList({ initialUsers, currentUserRole }: UserListProp
                                                         <DropdownMenuItem onClick={() => navigateToUser(user.id)}>
                                                             <Edit className="mr-2 h-4 w-4" /> Edit Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSub>
-                                                            <DropdownMenuSubTrigger>
-                                                                <Shield className="mr-2 h-4 w-4" /> Change Role
-                                                            </DropdownMenuSubTrigger>
-                                                            <DropdownMenuSubContent>
-                                                                <DropdownMenuRadioGroup value={user.role} onValueChange={(val) => handleRoleChange(user.id, val)}>
-                                                                    {isAdmin && <DropdownMenuRadioItem value="admin">Admin</DropdownMenuRadioItem>}
-                                                                    {isAdmin && <DropdownMenuRadioItem value="supervisor">Supervisor</DropdownMenuRadioItem>}
-                                                                    <DropdownMenuRadioItem value="accountant">Accountant</DropdownMenuRadioItem>
-                                                                    <DropdownMenuRadioItem value="guest">Guest</DropdownMenuRadioItem>
-                                                                </DropdownMenuRadioGroup>
-                                                            </DropdownMenuSubContent>
-                                                        </DropdownMenuSub>
+                                                        {!user.is_super_admin && (
+                                                            <DropdownMenuSub>
+                                                                <DropdownMenuSubTrigger>
+                                                                    <Shield className="mr-2 h-4 w-4" /> Change Role
+                                                                </DropdownMenuSubTrigger>
+                                                                <DropdownMenuSubContent>
+                                                                    <DropdownMenuRadioGroup value={user.role} onValueChange={(val) => handleRoleChange(user.id, val)}>
+                                                                        {isAdmin && <DropdownMenuRadioItem value="admin">Admin</DropdownMenuRadioItem>}
+                                                                        {isAdmin && <DropdownMenuRadioItem value="supervisor">Supervisor</DropdownMenuRadioItem>}
+                                                                        <DropdownMenuRadioItem value="accountant">Accountant</DropdownMenuRadioItem>
+                                                                        <DropdownMenuRadioItem value="guest">Guest</DropdownMenuRadioItem>
+                                                                    </DropdownMenuRadioGroup>
+                                                                </DropdownMenuSubContent>
+                                                            </DropdownMenuSub>
+                                                        )}
 
                                                         <DropdownMenuSeparator />
 
-                                                        {user.status === 'active' ? (
-                                                            <DropdownMenuItem onClick={() => toggleStatus(user.id, 'suspended')}>
-                                                                <Ban className="mr-2 h-4 w-4" /> Suspend
-                                                            </DropdownMenuItem>
-                                                        ) : (
-                                                            <DropdownMenuItem onClick={() => toggleStatus(user.id, 'active')}>
-                                                                <CheckCircle className="mr-2 h-4 w-4" /> Activate
-                                                            </DropdownMenuItem>
+                                                        {!user.is_super_admin && (
+                                                            <>
+                                                                {user.status === 'active' ? (
+                                                                    <DropdownMenuItem onClick={() => toggleStatus(user.id, 'suspended')}>
+                                                                        <Ban className="mr-2 h-4 w-4" /> Suspend
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem onClick={() => toggleStatus(user.id, 'active')}>
+                                                                        <CheckCircle className="mr-2 h-4 w-4" /> Activate
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                            </>
+                                                        )}
+
+                                                        {currentUserIsSuperAdmin && user.role === 'admin' && !user.is_super_admin && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => handleToggle2FAExemption(user.id, user.is_2fa_exempt || false)}>
+                                                                    <ShieldAlert className="mr-2 h-4 w-4" />
+                                                                    {user.is_2fa_exempt ? 'Revoke 2FA Exemption' : 'Grant 2FA Exemption'}
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                     </>
                                                 )}
 
-                                                {canDeleteUser(user) && (
+                                                {canDeleteUser(user) && !user.is_super_admin && (
                                                     <>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem

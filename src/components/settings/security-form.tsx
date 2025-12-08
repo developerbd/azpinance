@@ -45,8 +45,14 @@ export default function SecuritySettingsForm({ settings }: { settings: any }) {
             if (!user) return;
 
             // Fetch user profile for role and grace period start
-            const { data: profile } = await supabase.from('users').select('role, admin_grace_period_start').eq('id', user.id).single();
+            const { data: profile } = await supabase.from('users').select('role, admin_grace_period_start, is_2fa_exempt').eq('id', user.id).single();
             if (!profile || profile.role !== 'admin') {
+                setShowTimer(false);
+                return;
+            }
+
+            // Check if user is exempt from 2FA
+            if (profile.is_2fa_exempt) {
                 setShowTimer(false);
                 return;
             }

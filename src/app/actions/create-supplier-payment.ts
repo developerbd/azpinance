@@ -2,58 +2,67 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { logActivity } from '@/lib/logger';
 import { notifyAdmins } from '@/lib/notifications';
-import { supplierPaymentSchema } from '@/lib/schemas';
+import { logActivity } from '@/lib/logger';
+import { SupplierPaymentSchema, type SupplierPaymentInput } from '@/lib/validations';
+import { z } from 'zod';
 
-export async function createSupplierPayment(data: any) {
+export async function createSupplierPayment(data: unknown) {
     const supabase = await createClient();
 
-    // Check auth
+    // 1. Check Authentication
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Unauthorized' };
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
 
-    // Check role
+    // 2. Validate Input
+    let validatedData: SupplierPaymentInput;
+    try {
+        validatedData = SupplierPaymentSchema.parse(data);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return { error: error.errors[0].message };
+        }
+        return { error: 'Invalid input data' };
+    }
+
+    // 3. Get user profile for notification
     const { data: profile } = await supabase
         .from('users')
-        .select('role, full_name')
+        .select('full_name')
         .eq('id', user.id)
         .single();
 
-    if (!['accountant', 'supervisor', 'admin'].includes(profile?.role)) {
-        return { error: 'Permission denied' };
-    }
-
-    // Validate data
-    const validation = supplierPaymentSchema.safeParse(data);
-    if (!validation.success) {
-        return { error: validation.error.issues[0].message };
-    }
-
-    const { error } = await supabase
+    // 4. Create Payment
+    const { data: payment, error: insertError } = await supabase
         .from('supplier_payments')
-        .insert({
-            ...validation.data,
-            created_by: user.id
-        });
+        .insert([{ ...validatedData, user_id: user.id }])
+        .select()
+        .single();
 
-    if (error) return { error: error.message };
+    if (insertError) {
+        console.error('Error creating supplier payment:', insertError);
+        return { error: 'Failed to create payment' };
+    }
 
-    // Log activity
+    // 5. Log Activity
     await logActivity({
         action: 'CREATE',
         entityType: 'SUPPLIER_PAYMENT',
-        details: { amount: validation.data.amount, supplier_id: validation.data.supplier_id }
+        entityId: payment.id,
+        details: { amount: validatedData.amount, supplier_id: validatedData.supplier_id }
     });
 
-    // Notify Admins
+    // 6. Notify Admins
     await notifyAdmins({
         title: 'New Supplier Payment',
-        message: `A new supplier payment of ${validation.data.amount} has been created by ${profile?.full_name || 'a user'}.`,
+        message: `A new supplier payment of ${validatedData.amount} has been created by ${profile?.full_name || user.email}.`,
         type: 'info',
-        link: `/contacts/${validation.data.supplier_id}`
+        link: `/contacts/${validatedData.supplier_id}`
     });
 
-    revalidatePath(`/contacts/${validation.data.supplier_id}`);
-    return { success: true };
+    revalidatePath('/contacts');
+    revalidatePath(`/contacts/${validatedData.supplier_id}`);
+    return { success: true, data: payment };
 }

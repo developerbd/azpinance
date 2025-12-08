@@ -5,6 +5,12 @@ import { createClient } from '@/lib/supabase/server';
 export async function getDashboardStats() {
     const supabase = await createClient();
 
+    // Check Authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
+
     // 1. Total Paid to Suppliers (All Time)
     const { data: payments, error: paymentError } = await supabase
         .from('supplier_payments')

@@ -24,14 +24,19 @@ export async function updateUserStatus(userId: string, newStatus: string) {
         return { error: 'Forbidden: Admin or Supervisor access required' };
     }
 
+    // Check if target user is super admin
+    const { data: targetUser } = await supabase
+        .from('users')
+        .select('role, is_super_admin')
+        .eq('id', userId)
+        .single();
+
+    if (targetUser?.is_super_admin) {
+        return { error: 'Cannot modify super admin status' };
+    }
+
     // Check target user role if supervisor
     if (currentUserProfile?.role === 'supervisor') {
-        const { data: targetUser } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', userId)
-            .single();
-
         if (!targetUser || ['admin', 'supervisor'].includes(targetUser.role)) {
             return { error: 'Forbidden: Supervisors cannot modify Admin or Supervisor accounts' };
         }

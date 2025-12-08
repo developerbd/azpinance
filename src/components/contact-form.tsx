@@ -69,23 +69,25 @@ export function ContactForm({ contact, mode = 'edit' }: ContactFormProps) {
         .single();
 
       if (!insertError && newContact) {
-        await notifyContactCreated({
+        // Fire notification without awaiting (non-blocking)
+        notifyContactCreated({
           contactId: newContact.id,
           contactName: newContact.name,
           contactType: newContact.type
-        });
+        }).catch(err => console.error('Notification error:', err));
       }
       error = insertError;
     }
 
     if (error) {
       toast.error(error.message);
+      setLoading(false);
     } else {
       toast.success(contact ? 'Contact updated' : 'Contact created');
+      // Redirect immediately without waiting for refresh
       router.push('/contacts');
-      router.refresh();
+      // Don't set loading to false - let the navigation handle it
     }
-    setLoading(false);
   };
 
   return (

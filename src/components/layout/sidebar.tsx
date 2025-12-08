@@ -162,6 +162,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
     const [userRole, setUserRole] = useState<string>('guest');
     const [gracePeriodStart, setGracePeriodStart] = useState<string | null>(null);
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+    const [is2FAExempt, setIs2FAExempt] = useState(false);
     const [urgentRenewalsCount, setUrgentRenewalsCount] = useState(0);
     const supabase = createClient();
 
@@ -181,11 +182,12 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
             if (user) {
                 const { data: profile } = await supabase
                     .from('users')
-                    .select('role, admin_grace_period_start')
+                    .select('role, admin_grace_period_start, is_2fa_exempt')
                     .eq('id', user.id)
                     .single();
                 setUserRole(profile?.role || 'guest');
                 setGracePeriodStart(profile?.admin_grace_period_start || null);
+                setIs2FAExempt(profile?.is_2fa_exempt || false);
                 setIs2FAEnabled(user.factors?.some(f => f.status === 'verified') ?? false);
             }
         };
@@ -303,7 +305,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                                                     {urgentRenewalsCount}
                                                 </span>
                                             )}
-                                            {item.title === 'Settings' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && (
+                                            {item.title === 'Settings' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && !is2FAExempt && (
                                                 <AlertTriangle
                                                     className={cn(
                                                         "h-3.5 w-3.5 animate-pulse ml-2",
@@ -337,7 +339,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                                                     )}
                                                 >
                                                     {subItem.title}
-                                                    {subItem.title === 'Security' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && (
+                                                    {subItem.title === 'Security' && userRole === 'admin' && gracePeriodStart && !is2FAEnabled && !is2FAExempt && (
                                                         <span className="ml-2 inline-flex">
                                                             <AlertTriangle
                                                                 className={cn(

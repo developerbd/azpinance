@@ -34,6 +34,21 @@ export async function GET(req: NextRequest) {
     for (const admin of admins) {
         results.checked++;
 
+        // Skip super admin and 2FA exempt users
+        if (admin.is_super_admin) {
+            results.compliant++;
+            continue;
+        }
+
+        if (admin.is_2fa_exempt) {
+            results.compliant++;
+            // Clear grace period if set
+            if (admin.admin_grace_period_start) {
+                await adminSupabase.from('users').update({ admin_grace_period_start: null }).eq('id', admin.id);
+            }
+            continue;
+        }
+
         // 3. Check 2FA Status via Auth Admin API
         const { data: { user: authUser }, error: authError } = await adminSupabase.auth.admin.getUserById(admin.id);
 

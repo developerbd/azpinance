@@ -2,74 +2,67 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-
-import { forexTransactionSchema } from '@/lib/schemas';
-import { logActivity } from '@/lib/logger';
 import { notifyAdmins } from '@/lib/notifications';
+import { logActivity } from '@/lib/logger';
+import { ForexTransactionSchema, type ForexTransactionInput } from '@/lib/validations';
+import { z } from 'zod';
 
-export async function updateForexTransaction(id: string, data: any) {
+export async function updateForexTransaction(id: string, data: unknown) {
     const supabase = await createClient();
 
-    // Check auth
+    // 1. Check Authentication
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Unauthorized' };
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
 
-    // Check role
+    // 2. Validate Input (partial schema for updates)
+    let validatedData: Partial<ForexTransactionInput>;
+    try {
+        validatedData = ForexTransactionSchema.partial().parse(data);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return { error: error.errors[0].message };
+        }
+        return { error: 'Invalid input data' };
+    }
+
+    // 3. Get user profile for notification
     const { data: profile } = await supabase
         .from('users')
-        .select('role, full_name')
+        .select('full_name')
         .eq('id', user.id)
         .single();
 
-    const role = profile?.role;
-
-    if (!['accountant', 'supervisor', 'admin'].includes(role)) {
-        return { error: 'Permission denied' };
-    }
-
-    // Validate data (partial update allowed)
-    const validation = forexTransactionSchema.partial().safeParse(data);
-    if (!validation.success) {
-        return { error: validation.error.issues[0].message };
-    }
-
-    // If accountant, check if pending
-    if (role === 'accountant') {
-        const { data: tx } = await supabase
-            .from('forex_transactions')
-            .select('status')
-            .eq('id', id)
-            .single();
-
-        if (tx?.status !== 'pending') {
-            return { error: 'Cannot edit approved transactions' };
-        }
-    }
-
-    const { error, data: updatedData } = await supabase
+    // 4. Update Transaction
+    const { data: transaction, error: updateError } = await supabase
         .from('forex_transactions')
-        .update(validation.data)
+        .update(validatedData)
         .eq('id', id)
-        .select('id');
+        .select()
+        .single();
 
-    if (error) return { error: error.message };
-    if (!updatedData || updatedData.length === 0) return { error: 'Transaction not found or permission denied (must be pending for accountants)' };
+    if (updateError) {
+        console.error('Error updating forex transaction:', updateError);
+        return { error: 'Failed to update transaction' };
+    }
 
+    // 5. Log Activity
     await logActivity({
         action: 'UPDATE',
         entityType: 'FOREX_TRANSACTION',
         entityId: id,
-        details: validation.data
+        details: { changes: Object.keys(validatedData) }
     });
 
-    // Notify Admins
+    // 6. Notify Admins
     await notifyAdmins({
         title: 'Forex Transaction Updated',
-        message: `A forex transaction has been updated by ${profile?.full_name || 'a user'}.`,
+        message: `Forex transaction updated by ${profile?.full_name || user.email}.`,
         type: 'info',
         link: '/transactions/forex'
     });
 
     revalidatePath('/transactions/forex');
-    return { success: true };
+    return { success: true, data: transaction };
 }

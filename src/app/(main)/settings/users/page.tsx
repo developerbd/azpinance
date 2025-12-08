@@ -17,11 +17,12 @@ export default async function UserManagementPage() {
     // Check user role
     const { data: userProfile } = await supabase
         .from('users')
-        .select('role')
+        .select('role, is_super_admin')
         .eq('id', user.id)
         .single();
 
     const role = userProfile?.role || 'guest';
+    const isSuperAdmin = userProfile?.is_super_admin || false;
 
     // Allow Admin, Supervisor. Redirect Guest, Accountant.
     if (!['admin', 'supervisor'].includes(role)) {
@@ -43,7 +44,7 @@ export default async function UserManagementPage() {
                     <CardDescription>Manage users and their roles.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UserList initialUsers={users || []} currentUserRole={role} />
+                    <UserList initialUsers={users || []} currentUserRole={role} currentUserIsSuperAdmin={isSuperAdmin} />
                 </CardContent>
             </Card>
         </div>
