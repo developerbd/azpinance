@@ -26,6 +26,16 @@ import {
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Trash, Ban, CheckCircle, UserPlus, Shield, Search, Filter, Edit, Eye, EyeOff, ShieldCheck, ShieldAlert } from 'lucide-react';
 import {
     Dialog,
@@ -71,6 +81,7 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     // Edit User State
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -151,20 +162,19 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
         }
     };
 
-    const handleDelete = async (userId: string) => {
-        const targetUser = users.find(u => u.id === userId);
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        const targetUser = users.find(u => u.id === deleteId);
         if (!targetUser || !canDeleteUser(targetUser)) return;
-
-        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
         try {
             const { deleteUser } = await import('@/app/actions/delete-user');
-            const result = await deleteUser(userId);
+            const result = await deleteUser(deleteId);
 
             if (result.error) {
                 toast.error(result.error);
             } else {
-                setUsers(users.filter(u => u.id !== userId));
+                setUsers(users.filter(u => u.id !== deleteId));
                 toast.success('User deleted successfully');
                 window.location.reload();
             }
@@ -172,6 +182,7 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
             toast.error('Failed to delete user');
             console.error(error);
         }
+        setDeleteId(null);
     };
 
     const handleRoleChange = async (userId: string, newRole: string) => {
@@ -511,8 +522,8 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                                                     <>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            className="text-red-600 focus:text-red-600"
-                                                            onClick={() => handleDelete(user.id)}
+                                                            className="text-red-600 focus:text-red-600 cursor-pointer"
+                                                            onSelect={() => setDeleteId(user.id)}
                                                         >
                                                             <Trash className="mr-2 h-4 w-4" /> Delete
                                                         </DropdownMenuItem>
@@ -527,6 +538,22 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                     </TableBody>
                 </Table>
             </div>
-        </div>
+            </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the user account and revoke all access.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div >
     );
 }

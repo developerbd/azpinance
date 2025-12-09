@@ -28,6 +28,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MoreHorizontal, Edit, Trash, CheckCircle, DollarSign, Search, Filter, X, Square, RefreshCw } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -62,6 +72,7 @@ interface ForexListProps {
 
 export function ForexList({ initialTransactions, userRole, totalCount, currentPage, pageSize }: ForexListProps) {
     const [transactions, setTransactions] = useState<ForexTransaction[]>(initialTransactions);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -158,11 +169,11 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
 
 
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure?')) return;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
         try {
             const { deleteForexTransaction } = await import('@/app/actions/delete-forex-transaction');
-            const result = await deleteForexTransaction(id);
+            const result = await deleteForexTransaction(deleteId);
             if (result.error) toast.error(result.error);
             else {
                 toast.success('Transaction deleted');
@@ -171,6 +182,7 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
         } catch (e) {
             toast.error('Failed to delete');
         }
+        setDeleteId(null);
     };
 
     const [isExporting, setIsExporting] = useState(false);
@@ -505,8 +517,8 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                                                         <>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
-                                                                className="text-red-600"
-                                                                onClick={() => handleDelete(tx.id)}
+                                                                className="text-red-600 cursor-pointer"
+                                                                onSelect={() => setDeleteId(tx.id)}
                                                             >
                                                                 <Trash className="mr-2 h-4 w-4" /> Delete
                                                             </DropdownMenuItem>
@@ -547,6 +559,21 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                     </Button>
                 </div>
             )}
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the forex transaction record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

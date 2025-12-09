@@ -96,9 +96,6 @@ export default function NewSupplierPaymentPage() {
                         <SupplierPaymentForm
                             supplierId={selectedSupplierId}
                             mode="create"
-                            onSuccess={() => {
-                                // Form handles redirect, or we can do something here
-                            }}
                         />
                     </div>
                 )}

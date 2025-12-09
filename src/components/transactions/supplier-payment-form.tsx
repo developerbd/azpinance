@@ -111,8 +111,12 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
                     toast.error(result.error);
                 } else {
                     toast.success('Payment updated successfully');
-                    if (onSuccess) onSuccess();
-                    else router.push('/transactions/supplier-payments');
+                    if (onSuccess) {
+                        onSuccess();
+                    } else {
+                        router.refresh();
+                        router.push('/transactions/supplier-payments');
+                    }
                 }
             } else {
                 // Create mode
@@ -137,8 +141,12 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
                     toast.error(result.error);
                 } else {
                     toast.success('Payment created successfully');
-                    if (onSuccess) onSuccess();
-                    else router.push('/transactions/supplier-payments');
+                    if (onSuccess) {
+                        onSuccess();
+                    } else {
+                        router.refresh();
+                        router.push('/transactions/supplier-payments');
+                    }
                 }
             }
         } catch (error) {

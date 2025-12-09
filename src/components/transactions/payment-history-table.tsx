@@ -19,6 +19,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ExportMenu } from '@/components/common/export-menu';
@@ -32,6 +42,7 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
     const [payments, setPayments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalCount, setTotalCount] = useState(0);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
     const router = useRouter();
 
     // Filters
@@ -158,21 +169,23 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this payment record?')) return;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
 
-        const result = await deleteSupplierPayment(id);
+        const result = await deleteSupplierPayment(deleteId);
         if (result.error) {
             toast.error(result.error);
         } else {
             toast.success('Payment deleted successfully');
             fetchPayments(); // Refresh list
         }
+        setDeleteId(null);
     };
 
     // Bulk Selection State
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+    const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
     // Toggle single row selection
     const toggleSelection = (id: string) => {
@@ -190,9 +203,7 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
         }
     };
 
-    const handleBulkDelete = async () => {
-        if (!confirm(`Are you sure you want to delete ${selectedIds.length} payments?`)) return;
-
+    const confirmBulkDelete = async () => {
         setIsBulkDeleting(true);
         try {
             const { bulkDeleteSupplierPayments } = await import('@/app/actions/bulk-delete-payments');
@@ -209,6 +220,7 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
             toast.error('Failed to delete payments');
         } finally {
             setIsBulkDeleting(false);
+            setShowBulkConfirm(false);
         }
     };
 
@@ -265,7 +277,7 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
         <div className="relative">
             <BulkActionsToolbar
                 selectedCount={selectedIds.length}
-                onDelete={isAdmin ? handleBulkDelete : undefined}
+                onDelete={isAdmin ? () => setShowBulkConfirm(true) : undefined}
                 onExport={handleBulkExport}
                 onCancel={() => setSelectedIds([])}
                 loading={isBulkDeleting}
@@ -408,8 +420,8 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                                                                 <>
                                                                     <DropdownMenuSeparator />
                                                                     <DropdownMenuItem
-                                                                        className="text-red-600"
-                                                                        onClick={() => handleDelete(payment.id)}
+                                                                        className="text-red-600 cursor-pointer"
+                                                                        onSelect={() => setDeleteId(payment.id)}
                                                                     >
                                                                         <Trash className="mr-2 h-4 w-4" /> Delete
                                                                     </DropdownMenuItem>
@@ -459,6 +471,39 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                     </div>
                 </CardContent>
             </Card>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the supplier payment record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showBulkConfirm} onOpenChange={setShowBulkConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete {selectedIds.length} payment records.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBulkDelete} className="bg-red-600 hover:bg-red-700">
+                            {isBulkDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Delete All
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

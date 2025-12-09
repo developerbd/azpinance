@@ -43,7 +43,7 @@ export async function createSupplierPayment(data: unknown) {
 
     if (insertError) {
         console.error('Error creating supplier payment:', insertError);
-        return { error: 'Failed to create payment' };
+        return { error: `Failed to create payment: ${insertError.message} (${insertError.details || ''})` };
     }
 
     // 5. Log Activity
@@ -64,5 +64,6 @@ export async function createSupplierPayment(data: unknown) {
 
     revalidatePath('/contacts');
     revalidatePath(`/contacts/${validatedData.supplier_id}`);
+    revalidatePath('/transactions/supplier-payments');
     return { success: true, data: payment };
 }

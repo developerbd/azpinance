@@ -47,7 +47,7 @@ export async function createFinancialAccount(data: unknown) {
 
     if (insertError) {
         console.error('Error creating financial account:', insertError);
-        return { error: 'Failed to create account' };
+        return { error: `Failed to create account: ${insertError.message} (${insertError.details || ''})` };
     }
 
     // 5. Log Activity

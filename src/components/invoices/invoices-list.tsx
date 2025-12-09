@@ -19,6 +19,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface InvoicesListProps {
     invoices: any[];
@@ -30,6 +40,8 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [showBulkConfirm, setShowBulkConfirm] = useState(false);
 
     const isAdmin = userRole === 'admin';
 
@@ -59,9 +71,7 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
         }
     };
 
-    const handleBulkDelete = async () => {
-        if (!confirm(`Are you sure you want to delete ${selectedIds.length} invoices?`)) return;
-
+    const confirmBulkDelete = async () => {
         setIsBulkDeleting(true);
         try {
             const { bulkDeleteInvoices } = await import('@/app/actions/bulk-delete-invoices');
@@ -78,7 +88,27 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
             toast.error('Failed to delete invoices');
         } finally {
             setIsBulkDeleting(false);
+            setShowBulkConfirm(false);
         }
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            // Reusing bulk delete for single item as well for simplicity, or we could have a single delete action
+            const { bulkDeleteInvoices } = await import('@/app/actions/bulk-delete-invoices');
+            const result = await bulkDeleteInvoices([deleteId]);
+
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success('Invoice deleted');
+                router.refresh();
+            }
+        } catch (e) {
+            toast.error('Failed to delete invoice');
+        }
+        setDeleteId(null);
     };
 
     const handleBulkExport = async (type: 'xlsx' | 'pdf') => {
@@ -216,7 +246,7 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
 
             <BulkActionsToolbar
                 selectedCount={selectedIds.length}
-                onDelete={isAdmin ? handleBulkDelete : undefined}
+                onDelete={isAdmin ? () => setShowBulkConfirm(true) : undefined}
                 onExport={handleBulkExport}
                 onCancel={() => setSelectedIds([])}
                 loading={isBulkDeleting}
@@ -288,25 +318,8 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
-                                                        className="text-red-600"
-                                                        onClick={() => {
-                                                            setSelectedIds([invoice.id]);
-                                                            // We can reuse handleBulkDelete but we need to set state first.
-                                                            // Or better, just call a single delete function.
-                                                            // For simplicity, let's just use the bulk delete flow or a separate one.
-                                                            // Let's just confirm and call bulk delete with one ID.
-                                                            if (confirm('Are you sure you want to delete this invoice?')) {
-                                                                import('@/app/actions/bulk-delete-invoices').then(({ bulkDeleteInvoices }) => {
-                                                                    bulkDeleteInvoices([invoice.id]).then(res => {
-                                                                        if (res.error) toast.error(res.error);
-                                                                        else {
-                                                                            toast.success('Invoice deleted');
-                                                                            router.refresh();
-                                                                        }
-                                                                    });
-                                                                });
-                                                            }
-                                                        }}
+                                                        className="text-red-600 cursor-pointer"
+                                                        onSelect={() => setDeleteId(invoice.id)}
                                                     >
                                                         <Trash className="mr-2 h-4 w-4" /> Delete
                                                     </DropdownMenuItem>
@@ -326,6 +339,35 @@ export function InvoicesList({ invoices, userRole }: InvoicesListProps) {
                     )}
                 </TableBody>
             </Table>
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this invoice.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showBulkConfirm} onOpenChange={setShowBulkConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete {selectedIds.length} invoices.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBulkDelete} className="bg-red-600 hover:bg-red-700">Delete All</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

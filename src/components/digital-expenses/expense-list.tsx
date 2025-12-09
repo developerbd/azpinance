@@ -21,6 +21,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MoreHorizontal, Edit, Trash, CheckCircle, XCircle, RefreshCw, FileText, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,6 +48,7 @@ export function ExpenseList({ expenses, userRole }: ExpenseListProps) {
     const router = useRouter();
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [methodFilter, setMethodFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const filteredExpenses = expenses.filter(expense => {
         if (categoryFilter !== 'all' && expense.category !== categoryFilter) return false;
@@ -48,16 +59,17 @@ export function ExpenseList({ expenses, userRole }: ExpenseListProps) {
     const isSupervisorOrAdmin = ['supervisor', 'admin'].includes(userRole);
     const canDelete = userRole === 'admin';
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this expense?')) return;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
 
-        const result = await deleteDigitalExpense(id);
+        const result = await deleteDigitalExpense(deleteId);
         if (result.success) {
             toast.success('Expense deleted');
             router.refresh(); // Refresh server data
         } else {
             toast.error(result.error);
         }
+        setDeleteId(null);
     };
 
     const handleApprove = async (id: string, status: 'approved' | 'rejected') => {
@@ -210,7 +222,7 @@ export function ExpenseList({ expenses, userRole }: ExpenseListProps) {
                                                     {canDelete && (
                                                         <>
                                                             <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => handleDelete(expense.id)} className="text-red-600">
+                                                            <DropdownMenuItem onSelect={() => setDeleteId(expense.id)} className="text-red-600 cursor-pointer">
                                                                 <Trash className="mr-2 h-4 w-4" /> Delete
                                                             </DropdownMenuItem>
                                                         </>
@@ -225,6 +237,21 @@ export function ExpenseList({ expenses, userRole }: ExpenseListProps) {
                     </Table>
                 </CardContent>
             </Card>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this expense record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -26,29 +26,39 @@ export const ForexTransactionSchema = z.object({
 export type ForexTransactionInput = z.infer<typeof ForexTransactionSchema>;
 
 // Supplier Payment Schema
+// Supplier Payment Schema
 export const SupplierPaymentSchema = z.object({
     supplier_id: z.string().uuid('Invalid supplier ID'),
     amount: positiveNumberSchema,
-    payment_date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
-    payment_method: z.enum(['bank_transfer', 'cash', 'check', 'online', 'other']),
-    reference_number: z.string().max(100).optional(),
+    date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+    transaction_method: z.enum(['bank_transfer', 'cash', 'check', 'online', 'mfs', 'other']),
+    reference_id: z.string().max(100).optional(),
     notes: z.string().max(1000).optional(),
     invoice_numbers: z.array(z.string()).optional(),
+    destination_account_id: z.string().uuid().nullable().optional(),
+    attachments: z.array(z.string()).optional(),
 });
 
 export type SupplierPaymentInput = z.infer<typeof SupplierPaymentSchema>;
 
 // Financial Account Schema
+// Financial Account Schema
 export const FinancialAccountSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(200),
-    type: z.enum(['bank', 'cash', 'mobile_banking', 'other']),
+    scope: z.enum(['local', 'international']).default('local'),
+    category: z.enum(['internal', 'receiving', 'third_party']).default('internal'),
+    type: z.enum(['bank', 'cash', 'mobile_finance', 'payoneer', 'paypal', 'wise', 'crypto', 'other']),
+    currency: z.string().min(3, 'Currency must be at least 3 characters').max(10, 'Currency code too long'),
+    status: z.enum(['active', 'inactive']).default('active'),
+    contact_id: z.string().uuid().nullable().optional(),
+    details: z.record(z.any()).optional(),
+    custom_fields: z.record(z.any()).optional(),
+    attachments: z.array(z.string()).optional(),
+    notes: z.string().max(1000).optional(),
+    // Legacy fields (kept optionally for backward compatibility if needed, or removed if strictly not sent)
     account_number: z.string().max(100).optional(),
     bank_name: z.string().max(200).optional(),
     branch: z.string().max(200).optional(),
-    balance: z.number().default(0),
-    currency: currencySchema.default('BDT'),
-    status: z.enum(['active', 'inactive']).default('active'),
-    notes: z.string().max(1000).optional(),
 });
 
 export type FinancialAccountInput = z.infer<typeof FinancialAccountSchema>;

@@ -48,6 +48,7 @@ export async function deleteSupplierPayment(id: string) {
         });
 
         revalidatePath('/transactions/supplier-payments');
+        revalidatePath('/contacts');
         return { success: true };
     } catch (error: any) {
         console.error('Delete error:', error);

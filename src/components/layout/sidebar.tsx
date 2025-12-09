@@ -283,7 +283,7 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                         return (
                             <Collapsible
                                 key={index}
-                                open={isOpen}
+                                open={!!isOpen}
                                 onOpenChange={() => toggleMenu(item.title)}
                                 className="w-full space-y-0.5"
                             >

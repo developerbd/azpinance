@@ -27,6 +27,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, MoreHorizontal, Trash, Ban, CheckCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -40,6 +50,7 @@ export default function AccountsPage() {
     const [typeFilter, setTypeFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -112,10 +123,10 @@ export default function AccountsPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this account?')) return;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
 
-        const { error } = await supabase.from('financial_accounts').delete().eq('id', id);
+        const { error } = await supabase.from('financial_accounts').delete().eq('id', deleteId);
 
         if (error) {
             toast.error('Failed to delete account');
@@ -123,6 +134,7 @@ export default function AccountsPage() {
             toast.success('Account deleted');
             fetchAccounts();
         }
+        setDeleteId(null);
     };
 
     const canEdit = userRole === 'admin';
@@ -269,8 +281,8 @@ export default function AccountsPage() {
                                                         <>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
-                                                                className="text-red-600 focus:text-red-600"
-                                                                onClick={() => handleDelete(account.id)}
+                                                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                                                onSelect={() => setDeleteId(account.id)}
                                                             >
                                                                 <Trash className="mr-2 h-4 w-4" /> Delete
                                                             </DropdownMenuItem>
@@ -286,6 +298,21 @@ export default function AccountsPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the financial account and potentially related transactions.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
