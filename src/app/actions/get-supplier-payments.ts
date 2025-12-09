@@ -5,6 +5,12 @@ import { createClient } from '@/lib/supabase/server';
 export async function getSupplierPayments(supplierId: string, page: number = 1, limit: number = 10) {
     const supabase = await createClient();
 
+    // Check Authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
+
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 

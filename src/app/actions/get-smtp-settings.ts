@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { decrypt, isEncrypted } from '@/lib/crypto';
 
 export async function getSmtpSettings() {
     const supabase = await createClient();
@@ -39,6 +40,17 @@ export async function getSmtpSettings() {
             from_email: '',
             sender_name: 'Biz Ad Finance',
         };
+    }
+
+    // Decrypt password if it's encrypted
+    if (data.password && isEncrypted(data.password)) {
+        try {
+            data.password = decrypt(data.password);
+        } catch (error) {
+            console.error('Failed to decrypt SMTP password:', error);
+            // Return empty password if decryption fails
+            data.password = '';
+        }
     }
 
     return data;

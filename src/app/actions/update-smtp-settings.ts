@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { encrypt } from '@/lib/crypto';
 
 interface UpdateSmtpParams {
     host: string;
@@ -9,7 +10,7 @@ interface UpdateSmtpParams {
     user: string;
     password?: string; // Optional if not changing
     from_email: string;
-    sender_name: string;
+    sender_name?: string;
 }
 
 export async function updateSmtpSettings(params: UpdateSmtpParams) {
@@ -30,7 +31,15 @@ export async function updateSmtpSettings(params: UpdateSmtpParams) {
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+        host: string;
+        port: number;
+        user: string;
+        from_email: string;
+        sender_name?: string;
+        password?: string;
+        updated_at: string;
+    } = {
         host: params.host,
         port: params.port,
         user: params.user,
@@ -39,9 +48,14 @@ export async function updateSmtpSettings(params: UpdateSmtpParams) {
         updated_at: new Date().toISOString(),
     };
 
-    // Only update password if provided (to avoid clearing it if user leaves blank)
+    // Encrypt password before storing (only if provided)
     if (params.password) {
-        updateData.password = params.password;
+        try {
+            updateData.password = encrypt(params.password);
+        } catch (error) {
+            console.error('Failed to encrypt SMTP password:', error);
+            return { error: 'Failed to encrypt password' };
+        }
     }
 
     const { error } = await supabase

@@ -7,7 +7,7 @@ import { notifyAdmins } from '@/lib/notifications';
 import { digitalExpenseSchema } from '@/lib/schemas';
 import { addMonths, addYears, format, parseISO } from 'date-fns';
 
-export async function createDigitalExpense(data: any) {
+export async function createDigitalExpense(data: unknown) {
     const supabase = await createClient();
 
     // Check auth

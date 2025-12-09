@@ -11,6 +11,12 @@ export async function getAllSupplierPayments(
 ) {
     const supabase = await createClient();
 
+    // Check Authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
+
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 

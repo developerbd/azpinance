@@ -5,11 +5,18 @@ import { createClient } from '@/lib/supabase/server';
 export async function getContactsWithDue() {
     const supabase = await createClient();
 
-    // 1. Fetch all contacts
+    // Check Authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'Unauthorized' };
+    }
+
+    // 1. Fetch contacts (limit to prevent performance issues)
     const { data: contacts, error: contactsError } = await supabase
         .from('contacts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500); // Add reasonable limit
 
     if (contactsError) return { error: contactsError.message };
 

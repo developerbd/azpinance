@@ -6,7 +6,7 @@ import { logActivity } from '@/lib/logger';
 import { digitalExpenseSchema } from '@/lib/schemas';
 import { addMonths, addYears, format, parseISO } from 'date-fns';
 
-export async function updateDigitalExpense(id: string, data: any) {
+export async function updateDigitalExpense(id: string, data: unknown) {
     const supabase = await createClient();
 
     // Check auth
