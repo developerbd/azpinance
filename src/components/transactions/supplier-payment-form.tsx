@@ -94,6 +94,12 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
         setLoading(true);
 
         try {
+            if (!accountId) {
+                toast.error('Please select a destination account');
+                setLoading(false);
+                return;
+            }
+
             if (initialData?.id) {
                 // Update mode
                 const result = await updateSupplierPayment({
@@ -169,12 +175,12 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
                 </div>
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                        <Label>Destination Account</Label>
+                        <Label>Destination Account <span className="text-red-500">*</span></Label>
                         <a href="/accounts/new" target="_blank" rel="noopener noreferrer" className="text-xs flex items-center text-primary hover:underline">
                             <Plus className="h-3 w-3 mr-1" /> Add New
                         </a>
                     </div>
-                    <Select value={accountId} onValueChange={setAccountId}>
+                    <Select value={accountId} onValueChange={setAccountId} required>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Account" />
                         </SelectTrigger>

@@ -8,19 +8,19 @@ export const positiveNumberSchema = z.number().positive('Must be a positive numb
 export const currencySchema = z.string().length(3, 'Currency must be 3 characters (e.g., USD, BDT)');
 
 // Forex Transaction Schema
+// Forex Transaction Schema
 export const ForexTransactionSchema = z.object({
-    amount: positiveNumberSchema,
+    contact_id: z.string().uuid('Invalid contact ID'),
+    receiving_account_id: z.string().uuid('Invalid receiving account ID'),
+    account_type: z.enum(['bank', 'mfs', 'crypto', 'wallet', 'credit_card', 'paypal', 'payoneer', 'wise', 'cash', 'other']),
     currency: currencySchema,
+    amount: positiveNumberSchema,
     exchange_rate: positiveNumberSchema,
-    purpose: z.string().min(3, 'Purpose must be at least 3 characters').max(500),
-    beneficiary_name: z.string().min(2).max(200),
-    beneficiary_account: z.string().min(5).max(100),
-    bank_name: z.string().min(2).max(200),
-    payment_method: z.enum(['bank_transfer', 'cash', 'online', 'other']),
-    status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
-    payment_status: z.enum(['unpaid', 'paid']).default('unpaid'),
+    amount_bdt: positiveNumberSchema,
     transaction_date: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
-    notes: z.string().max(1000).optional(),
+    transaction_id: z.string().max(100).optional(),
+    note: z.string().max(1000).optional(),
+    attachments: z.array(z.string()).optional(),
 });
 
 export type ForexTransactionInput = z.infer<typeof ForexTransactionSchema>;
@@ -35,7 +35,7 @@ export const SupplierPaymentSchema = z.object({
     reference_id: z.string().max(100).optional(),
     notes: z.string().max(1000).optional(),
     invoice_numbers: z.array(z.string()).optional(),
-    destination_account_id: z.string().uuid().nullable().optional(),
+    destination_account_id: z.string().uuid('Destination account is required'),
     attachments: z.array(z.string()).optional(),
 });
 

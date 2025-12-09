@@ -255,7 +255,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Contact</Label>
-                    <Popover>
+                    <Popover modal={true}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
@@ -307,7 +307,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Receiving Account</Label>
-                    <Popover>
+                    <Popover modal={true}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
