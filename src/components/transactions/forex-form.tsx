@@ -25,6 +25,14 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    Dialog,
+    DialogContent,
+    DialogTrigger,
+    DialogTitle,
+    DialogHeader,
+} from '@/components/ui/dialog';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -47,6 +55,8 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
     const router = useRouter();
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
+
+    const isDesktop = useMediaQuery("(min-width: 768px)");
 
     // Form State
     const [transactionDate, setTransactionDate] = useState<string>(
@@ -270,111 +280,230 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Contact</Label>
-                    <Popover open={openContact} onOpenChange={setOpenContact}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={openContact}
-                                className={cn(
-                                    "w-full justify-between",
-                                    !contactId && "text-muted-foreground"
-                                )}
-                            >
-                                {contactId
-                                    ? filteredContacts.find(
-                                        (c) => c.id === contactId
-                                    )?.name
-                                    : "Select Contact"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                            <Command>
-                                <CommandInput placeholder="Search contact..." />
-                                <CommandList>
-                                    <CommandEmpty>No contact found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {filteredContacts.map((c) => (
-                                            <CommandItem
-                                                value={c.name}
-                                                key={c.id}
-                                                onSelect={() => {
-                                                    setContactId(c.id);
-                                                    setOpenContact(false);
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        c.id === contactId
-                                                            ? "opacity-100"
-                                                            : "opacity-0"
-                                                    )}
-                                                />
-                                                {c.name}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <div className="space-y-2 flex flex-col">
+                        <Label>Contact</Label>
+                        {isDesktop ? (
+                            <Popover open={openContact} onOpenChange={setOpenContact}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openContact}
+                                        className={cn(
+                                            "w-full justify-between",
+                                            !contactId && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {contactId
+                                            ? filteredContacts.find(
+                                                (c) => c.id === contactId
+                                            )?.name
+                                            : "Select Contact"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder="Search contact..." />
+                                        <CommandList>
+                                            <CommandEmpty>No contact found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {filteredContacts.map((c) => (
+                                                    <CommandItem
+                                                        value={c.name}
+                                                        key={c.id}
+                                                        onSelect={() => {
+                                                            setContactId(c.id);
+                                                            setOpenContact(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                c.id === contactId
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {c.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        ) : (
+                            <Dialog open={openContact} onOpenChange={setOpenContact}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openContact}
+                                        className={cn(
+                                            "w-full justify-between",
+                                            !contactId && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {contactId
+                                            ? filteredContacts.find(
+                                                (c) => c.id === contactId
+                                            )?.name
+                                            : "Select Contact"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="p-0">
+                                    <DialogHeader className="px-4 pt-4 pb-0">
+                                        <DialogTitle>Select Contact</DialogTitle>
+                                    </DialogHeader>
+                                    <Command>
+                                        <CommandInput placeholder="Search contact..." />
+                                        <CommandList>
+                                            <CommandEmpty>No contact found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {filteredContacts.map((c) => (
+                                                    <CommandItem
+                                                        value={c.name}
+                                                        key={c.id}
+                                                        onSelect={() => {
+                                                            setContactId(c.id);
+                                                            setOpenContact(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                c.id === contactId
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {c.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
                 </div>
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Receiving Account</Label>
-                    <Popover open={openAccount} onOpenChange={setOpenAccount}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={openAccount}
-                                className={cn(
-                                    "w-full justify-between",
-                                    !receivingAccountId && "text-muted-foreground"
-                                )}
-                            >
-                                {receivingAccountId
-                                    ? receivingAccounts.find(
-                                        (acc) => acc.id === receivingAccountId
-                                    )?.name
-                                    : "Select Receiving Account"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                            <Command>
-                                <CommandInput placeholder="Search account..." />
-                                <CommandList>
-                                    <CommandEmpty>No account found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {receivingAccounts.map((acc) => (
-                                            <CommandItem
-                                                value={acc.name}
-                                                key={acc.id}
-                                                onSelect={() => {
-                                                    setReceivingAccountId(acc.id);
-                                                    setCurrency(acc.currency); // Auto-set currency
-                                                    setOpenAccount(false);
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        acc.id === receivingAccountId
-                                                            ? "opacity-100"
-                                                            : "opacity-0"
-                                                    )}
-                                                />
-                                                {acc.name} ({acc.currency})
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+                    <div className="space-y-2 flex flex-col">
+                        <Label>Receiving Account</Label>
+                        {isDesktop ? (
+                            <Popover open={openAccount} onOpenChange={setOpenAccount}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openAccount}
+                                        className={cn(
+                                            "w-full justify-between",
+                                            !receivingAccountId && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {receivingAccountId
+                                            ? receivingAccounts.find(
+                                                (acc) => acc.id === receivingAccountId
+                                            )?.name
+                                            : "Select Receiving Account"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder="Search account..." />
+                                        <CommandList>
+                                            <CommandEmpty>No account found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {receivingAccounts.map((acc) => (
+                                                    <CommandItem
+                                                        value={acc.name}
+                                                        key={acc.id}
+                                                        onSelect={() => {
+                                                            setReceivingAccountId(acc.id);
+                                                            setCurrency(acc.currency); // Auto-set currency
+                                                            setOpenAccount(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                acc.id === receivingAccountId
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {acc.name} ({acc.currency})
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        ) : (
+                            <Dialog open={openAccount} onOpenChange={setOpenAccount}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openAccount}
+                                        className={cn(
+                                            "w-full justify-between",
+                                            !receivingAccountId && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {receivingAccountId
+                                            ? receivingAccounts.find(
+                                                (acc) => acc.id === receivingAccountId
+                                            )?.name
+                                            : "Select Receiving Account"}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="p-0">
+                                    <DialogHeader className="px-4 pt-4 pb-0">
+                                        <DialogTitle>Select Receiving Account</DialogTitle>
+                                    </DialogHeader>
+                                    <Command>
+                                        <CommandInput placeholder="Search account..." />
+                                        <CommandList>
+                                            <CommandEmpty>No account found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {receivingAccounts.map((acc) => (
+                                                    <CommandItem
+                                                        value={acc.name}
+                                                        key={acc.id}
+                                                        onSelect={() => {
+                                                            setReceivingAccountId(acc.id);
+                                                            setCurrency(acc.currency); // Auto-set currency
+                                                            setOpenAccount(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                acc.id === receivingAccountId
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {acc.name} ({acc.currency})
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
                 </div>
 
                 <div className="space-y-2">
