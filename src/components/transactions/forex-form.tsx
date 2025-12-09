@@ -69,6 +69,10 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
     // Track if rate was auto-calculated to maintain calculation mode
     const rateAutoCalculated = useRef(false);
 
+    // Controlled Popover States
+    const [openContact, setOpenContact] = useState(false);
+    const [openAccount, setOpenAccount] = useState(false);
+
     useEffect(() => {
         const fetchAccounts = async () => {
             const { data } = await supabase
@@ -266,11 +270,12 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Contact</Label>
-                    <Popover modal={true}>
+                    <Popover open={openContact} onOpenChange={setOpenContact}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 role="combobox"
+                                aria-expanded={openContact}
                                 className={cn(
                                     "w-full justify-between",
                                     !contactId && "text-muted-foreground"
@@ -296,6 +301,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                 key={c.id}
                                                 onSelect={() => {
                                                     setContactId(c.id);
+                                                    setOpenContact(false);
                                                 }}
                                             >
                                                 <Check
@@ -318,11 +324,12 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Receiving Account</Label>
-                    <Popover modal={true}>
+                    <Popover open={openAccount} onOpenChange={setOpenAccount}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 role="combobox"
+                                aria-expanded={openAccount}
                                 className={cn(
                                     "w-full justify-between",
                                     !receivingAccountId && "text-muted-foreground"
@@ -349,6 +356,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                 onSelect={() => {
                                                     setReceivingAccountId(acc.id);
                                                     setCurrency(acc.currency); // Auto-set currency
+                                                    setOpenAccount(false);
                                                 }}
                                             >
                                                 <Check
