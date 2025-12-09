@@ -314,6 +314,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                         setContactId(c.id);
                                                         setOpenContact(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(
@@ -368,6 +369,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                         setContactId(c.id);
                                                         setOpenContact(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(
@@ -425,6 +427,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                         setCurrency(acc.currency); // Auto-set currency
                                                         setOpenAccount(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(
@@ -480,6 +483,7 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
                                                         setCurrency(acc.currency); // Auto-set currency
                                                         setOpenAccount(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(
