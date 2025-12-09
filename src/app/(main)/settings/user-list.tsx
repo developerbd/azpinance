@@ -538,7 +538,7 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                     </TableBody>
                 </Table>
             </div>
-            </div>
+
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
@@ -554,6 +554,6 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div >
+        </div>
     );
 }
