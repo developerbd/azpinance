@@ -12,11 +12,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Upload, X, Check, ChevronsUpDown } from 'lucide-react';
 
 type Contact = {
     id: string;
@@ -253,38 +266,107 @@ export function ForexForm({ contacts, initialData, mode = 'edit' }: ForexFormPro
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Contact</Label>
-                    <Select value={contactId} onValueChange={setContactId}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Contact" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="unselected" disabled>Select Contact</SelectItem>
-                            {filteredContacts.map(c => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                    "w-full justify-between",
+                                    !contactId && "text-muted-foreground"
+                                )}
+                            >
+                                {contactId
+                                    ? filteredContacts.find(
+                                        (c) => c.id === contactId
+                                    )?.name
+                                    : "Select Contact"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                            <Command>
+                                <CommandInput placeholder="Search contact..." />
+                                <CommandList>
+                                    <CommandEmpty>No contact found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {filteredContacts.map((c) => (
+                                            <CommandItem
+                                                value={c.name}
+                                                key={c.id}
+                                                onSelect={() => {
+                                                    setContactId(c.id);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        c.id === contactId
+                                                            ? "opacity-100"
+                                                            : "opacity-0"
+                                                    )}
+                                                />
+                                                {c.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <div className="space-y-2 flex flex-col">
                     <Label>Receiving Account</Label>
-                    <Select value={receivingAccountId} onValueChange={(val) => {
-                        setReceivingAccountId(val);
-                        const acc = receivingAccounts.find(a => a.id === val);
-                        if (acc) setCurrency(acc.currency);
-                    }}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Receiving Account" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="unselected" disabled>Select Account</SelectItem>
-                            {receivingAccounts.map(acc => (
-                                <SelectItem key={acc.id} value={acc.id}>
-                                    {acc.name} ({acc.currency})
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                    "w-full justify-between",
+                                    !receivingAccountId && "text-muted-foreground"
+                                )}
+                            >
+                                {receivingAccountId
+                                    ? receivingAccounts.find(
+                                        (acc) => acc.id === receivingAccountId
+                                    )?.name
+                                    : "Select Receiving Account"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                            <Command>
+                                <CommandInput placeholder="Search account..." />
+                                <CommandList>
+                                    <CommandEmpty>No account found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {receivingAccounts.map((acc) => (
+                                            <CommandItem
+                                                value={acc.name}
+                                                key={acc.id}
+                                                onSelect={() => {
+                                                    setReceivingAccountId(acc.id);
+                                                    setCurrency(acc.currency); // Auto-set currency
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        acc.id === receivingAccountId
+                                                            ? "opacity-100"
+                                                            : "opacity-0"
+                                                    )}
+                                                />
+                                                {acc.name} ({acc.currency})
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <div className="space-y-2">

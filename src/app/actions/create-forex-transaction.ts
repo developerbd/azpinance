@@ -22,7 +22,8 @@ export async function createForexTransaction(data: unknown) {
         validatedData = ForexTransactionSchema.parse(data);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return { error: error.errors[0].message };
+            console.error('Zod Validation Error:', error.errors);
+            return { error: `Validation Error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}` };
         }
         return { error: 'Invalid input data' };
     }
@@ -43,7 +44,7 @@ export async function createForexTransaction(data: unknown) {
 
     if (insertError) {
         console.error('Error creating forex transaction:', insertError);
-        return { error: 'Failed to create transaction' };
+        return { error: `Failed to create transaction: ${insertError.message} (${insertError.details || ''})` };
     }
 
     // 5. Log Activity
