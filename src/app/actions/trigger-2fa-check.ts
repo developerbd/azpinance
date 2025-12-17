@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { runAdmin2FACheck } from '@/lib/admin-2fa-logic';
 
 export async function triggerAdmin2FACheck() {
     const supabase = await createClient();
@@ -21,30 +22,10 @@ export async function triggerAdmin2FACheck() {
         return { error: 'Only super admins can trigger this action' };
     }
 
-    // 2. Call the cron endpoint
+    // 2. Run the check directly (no fetch loopback)
     try {
-        let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-        if (!baseUrl && process.env.VERCEL_URL) {
-            baseUrl = `https://${process.env.VERCEL_URL}`;
-        }
-        if (!baseUrl) {
-            baseUrl = 'http://localhost:3000';
-        }
-
-        const response = await fetch(`${baseUrl}/api/cron/admin-2fa-check`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${process.env.CRON_SECRET || 'dev-secret'}`,
-            },
-        });
-
-        if (!response.ok) {
-            const error = await response.text();
-            return { error: `Failed to run 2FA check: ${error}` };
-        }
-
-        const result = await response.json();
-        return { success: true, data: result };
+        const results = await runAdmin2FACheck();
+        return { success: true, data: { results } };
     } catch (error: any) {
         return { error: `Failed to trigger 2FA check: ${error.message}` };
     }
