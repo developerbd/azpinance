@@ -32,7 +32,7 @@ export default async function UserManagementPage() {
     // Fetch all users for management
     const { data: users } = await supabase
         .from('users')
-        .select('*')
+        .select('*, admin_grace_period_start, is_2fa_exempt')
         .order('created_at', { ascending: false });
 
     return (

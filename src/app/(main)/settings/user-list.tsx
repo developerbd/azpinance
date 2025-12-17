@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
     Table,
@@ -36,7 +36,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Trash, Ban, CheckCircle, UserPlus, Shield, Search, Filter, Edit, Eye, EyeOff, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { MoreHorizontal, Trash, Ban, CheckCircle, UserPlus, Shield, Search, Filter, Edit, Eye, EyeOff, ShieldCheck, ShieldAlert, Clock, RefreshCw } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -67,12 +67,69 @@ type User = {
     created_at: string;
     is_super_admin?: boolean;
     is_2fa_exempt?: boolean;
+    admin_grace_period_start?: string | null;
 };
 
 interface UserListProps {
     initialUsers: User[];
     currentUserRole: string;
     currentUserIsSuperAdmin: boolean;
+}
+
+// Grace Period Countdown Component
+function GracePeriodCountdown({ graceStart }: { graceStart: string }) {
+    const calculateTimeLeft = (startTime: string) => {
+        const start = new Date(startTime);
+        const now = new Date();
+        const gracePeriodMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+        const endTime = new Date(start.getTime() + gracePeriodMs);
+        const timeLeft = endTime.getTime() - now.getTime();
+
+        if (timeLeft <= 0) {
+            return { expired: true, days: 0, hours: 0, minutes: 0, isUrgent: true };
+        }
+
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const isUrgent = timeLeft < 24 * 60 * 60 * 1000; // Less than 24 hours
+
+        return { expired: false, days, hours, minutes, isUrgent };
+    };
+
+    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(graceStart));
+
+    useEffect(() => {
+        // Update immediately
+        setTimeLeft(calculateTimeLeft(graceStart));
+
+        // Then update every minute
+        const interval = setInterval(() => {
+            setTimeLeft(calculateTimeLeft(graceStart));
+        }, 60000); // 60 seconds
+
+        return () => clearInterval(interval);
+    }, [graceStart]);
+
+    if (timeLeft.expired) {
+        return (
+            <Badge className="bg-red-600 hover:bg-red-700 flex items-center gap-1 text-xs">
+                <Clock className="h-3 w-3" />
+                EXPIRED
+            </Badge>
+        );
+    }
+
+    const badgeClass = timeLeft.isUrgent
+        ? "bg-red-600 hover:bg-red-700 flex items-center gap-1 text-xs"
+        : "bg-orange-500 hover:bg-orange-600 flex items-center gap-1 text-xs";
+
+    return (
+        <Badge className={badgeClass}>
+            <Clock className="h-3 w-3" />
+            {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m left
+        </Badge>
+    );
 }
 
 export default function UserList({ initialUsers, currentUserRole, currentUserIsSuperAdmin }: UserListProps) {
@@ -99,6 +156,8 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
     const [newUserUsername, setNewUserUsername] = useState('');
     const [newUserRole, setNewUserRole] = useState('guest');
     const [showPassword, setShowPassword] = useState(false);
+    const [running2FACheck, setRunning2FACheck] = useState(false);
+    const [checkResults, setCheckResults] = useState<any>(null);
 
     const isAdmin = currentUserRole === 'admin';
     const isSupervisor = currentUserRole === 'supervisor';
@@ -116,6 +175,30 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
 
         return matchesSearch && matchesRole;
     });
+
+    const handleRun2FACheck = async () => {
+        setRunning2FACheck(true);
+        setCheckResults(null);
+
+        try {
+            const { triggerAdmin2FACheck } = await import('@/app/actions/trigger-2fa-check');
+            const result = await triggerAdmin2FACheck();
+
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success('2FA enforcement check completed');
+                setCheckResults(result.data?.results);
+                // Refresh the page to show updated user roles
+                window.location.reload();
+            }
+        } catch (error) {
+            toast.error('Failed to run 2FA check');
+            console.error(error);
+        } finally {
+            setRunning2FACheck(false);
+        }
+    };
 
     const navigateToUser = (userId: string) => {
         // Allow navigation if admin or supervisor (view only for supervisor if restricted?)
@@ -307,106 +390,118 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                     </Select>
                 </div>
 
-                {canAddUser && (
-                    <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <UserPlus className="mr-2 h-4 w-4" /> Add User
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New User</DialogTitle>
-                                <DialogDescription>
-                                    Create a new user account. They will be able to login with these credentials.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={handleAddUser} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Full Name</Label>
-                                    <Input
-                                        value={newUserFullName}
-                                        onChange={(e) => setNewUserFullName(e.target.value)}
-                                        required
-                                        placeholder="John Doe"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Username</Label>
-                                    <Input
-                                        value={newUserUsername}
-                                        onChange={(e) => setNewUserUsername(e.target.value)}
-                                        placeholder="johndoe"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Email</Label>
-                                    <Input
-                                        type="email"
-                                        value={newUserEmail}
-                                        onChange={(e) => setNewUserEmail(e.target.value)}
-                                        required
-                                        placeholder="john@example.com"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Password</Label>
-                                    <div className="relative">
+                <div className="flex items-center gap-2">
+                    {currentUserIsSuperAdmin && (
+                        <Button
+                            variant="outline"
+                            onClick={handleRun2FACheck}
+                            disabled={running2FACheck}
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${running2FACheck ? 'animate-spin' : ''}`} />
+                            {running2FACheck ? 'Running...' : 'Run 2FA Check'}
+                        </Button>
+                    )}
+                    {canAddUser && (
+                        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <UserPlus className="mr-2 h-4 w-4" /> Add User
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add New User</DialogTitle>
+                                    <DialogDescription>
+                                        Create a new user account. They will be able to login with these credentials.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleAddUser} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Full Name</Label>
                                         <Input
-                                            type={showPassword ? "text" : "password"}
-                                            value={newUserPassword}
-                                            onChange={(e) => setNewUserPassword(e.target.value)}
+                                            value={newUserFullName}
+                                            onChange={(e) => setNewUserFullName(e.target.value)}
+                                            required
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Username</Label>
+                                        <Input
+                                            value={newUserUsername}
+                                            onChange={(e) => setNewUserUsername(e.target.value)}
+                                            placeholder="johndoe"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Email</Label>
+                                        <Input
+                                            type="email"
+                                            value={newUserEmail}
+                                            onChange={(e) => setNewUserEmail(e.target.value)}
+                                            required
+                                            placeholder="john@example.com"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Password</Label>
+                                        <div className="relative">
+                                            <Input
+                                                type={showPassword ? "text" : "password"}
+                                                value={newUserPassword}
+                                                onChange={(e) => setNewUserPassword(e.target.value)}
+                                                required
+                                                placeholder="******"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Confirm Password</Label>
+                                        <Input
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
                                             required
                                             placeholder="******"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                            ) : (
-                                                <Eye className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                        </Button>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Confirm Password</Label>
-                                    <Input
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        required
-                                        placeholder="******"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Role</Label>
-                                    <Select value={newUserRole} onValueChange={setNewUserRole}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
-                                            {isAdmin && <SelectItem value="supervisor">Supervisor</SelectItem>}
-                                            <SelectItem value="accountant">Accountant</SelectItem>
-                                            <SelectItem value="guest">Guest</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <DialogFooter>
-                                    <Button type="submit" disabled={loading}>
-                                        {loading ? 'Creating...' : 'Create User'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                )}
+                                    <div className="space-y-2">
+                                        <Label>Role</Label>
+                                        <Select value={newUserRole} onValueChange={setNewUserRole}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
+                                                {isAdmin && <SelectItem value="supervisor">Supervisor</SelectItem>}
+                                                <SelectItem value="accountant">Accountant</SelectItem>
+                                                <SelectItem value="guest">Guest</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={loading}>
+                                            {loading ? 'Creating...' : 'Create User'}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                </div>
             </div>
 
             <div className="rounded-md border">
@@ -450,6 +545,14 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                                                 <ShieldAlert className="h-3 w-3" /> 2FA Exempt
                                             </Badge>
                                         )}
+                                        {/* Show grace period countdown for admins without 2FA (only visible to super admin) */}
+                                        {currentUserIsSuperAdmin &&
+                                            user.role === 'admin' &&
+                                            !user.is_super_admin &&
+                                            !user.is_2fa_exempt &&
+                                            user.admin_grace_period_start && (
+                                                <GracePeriodCountdown graceStart={user.admin_grace_period_start} />
+                                            )}
                                     </div>
                                 </TableCell>
                                 <TableCell>

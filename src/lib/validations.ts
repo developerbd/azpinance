@@ -5,7 +5,7 @@ export const emailSchema = z.string().email('Invalid email address');
 export const phoneSchema = z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number').optional();
 export const urlSchema = z.string().url('Invalid URL').optional();
 export const positiveNumberSchema = z.number().positive('Must be a positive number');
-export const currencySchema = z.string().length(3, 'Currency must be 3 characters (e.g., USD, BDT)');
+export const currencySchema = z.string().min(3, 'Currency must be at least 3 characters').max(10, 'Currency code too long');
 
 // Forex Transaction Schema
 // Forex Transaction Schema
