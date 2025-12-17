@@ -23,7 +23,14 @@ export async function triggerAdmin2FACheck() {
 
     // 2. Call the cron endpoint
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        let baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        if (!baseUrl && process.env.VERCEL_URL) {
+            baseUrl = `https://${process.env.VERCEL_URL}`;
+        }
+        if (!baseUrl) {
+            baseUrl = 'http://localhost:3000';
+        }
+
         const response = await fetch(`${baseUrl}/api/cron/admin-2fa-check`, {
             method: 'GET',
             headers: {
