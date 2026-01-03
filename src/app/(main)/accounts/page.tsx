@@ -48,6 +48,7 @@ export default function AccountsPage() {
     const [search, setSearch] = useState('');
     const [scopeFilter, setScopeFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -90,8 +91,12 @@ export default function AccountsPage() {
             result = result.filter((a) => a.type === typeFilter);
         }
 
+        if (categoryFilter !== 'all') {
+            result = result.filter((a) => (a.category || 'internal') === categoryFilter);
+        }
+
         setFilteredAccounts(result);
-    }, [search, scopeFilter, typeFilter, accounts]);
+    }, [search, scopeFilter, typeFilter, categoryFilter, accounts]);
 
     const fetchAccounts = async () => {
         setLoading(true);
@@ -188,6 +193,17 @@ export default function AccountsPage() {
                         <SelectItem value="crypto">Crypto</SelectItem>
                     </SelectContent>
                 </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="internal">Internal</SelectItem>
+                        <SelectItem value="receiving">Receiving</SelectItem>
+                        <SelectItem value="third_party">Third Party</SelectItem>
+                    </SelectContent>
+                </Select>
                 <Button variant="outline" size="icon" onClick={fetchAccounts} title="Refresh">
                     <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -199,6 +215,7 @@ export default function AccountsPage() {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Scope</TableHead>
+                            <TableHead>Category</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead>Currency</TableHead>
                             <TableHead>Status</TableHead>
@@ -230,6 +247,19 @@ export default function AccountsPage() {
                                     <TableCell>
                                         <Badge variant="outline" className="capitalize">
                                             {account.scope || 'local'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant="outline"
+                                            className={`capitalize ${account.category === 'receiving'
+                                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                                    : account.category === 'third_party'
+                                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                                        : 'bg-slate-50 text-slate-700 border-slate-200'
+                                                }`}
+                                        >
+                                            {(account.category || 'internal').replace('_', ' ')}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="capitalize">
