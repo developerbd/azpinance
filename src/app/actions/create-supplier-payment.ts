@@ -51,7 +51,12 @@ export async function createSupplierPayment(data: unknown) {
         action: 'CREATE',
         entityType: 'SUPPLIER_PAYMENT',
         entityId: payment.id,
-        details: { amount: validatedData.amount, supplier_id: validatedData.supplier_id }
+        details: {
+            amount: validatedData.amount,
+            supplier_id: validatedData.supplier_id,
+            destination_account: validatedData.destination_account_id,
+            from_account: validatedData.from_account_id
+        }
     });
 
     // 6. Notify Admins

@@ -36,6 +36,7 @@ export const SupplierPaymentSchema = z.object({
     notes: z.string().max(1000).optional(),
     invoice_numbers: z.array(z.string()).optional(),
     destination_account_id: z.string().uuid('Destination account is required'),
+    from_account_id: z.string().uuid().nullable().optional(),
     attachments: z.array(z.string()).optional(),
 });
 

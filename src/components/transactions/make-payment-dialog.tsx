@@ -10,7 +10,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { createSupplierPayment } from '@/app/actions/create-supplier-payment';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, Plus } from 'lucide-react';
+import { Loader2, Upload, X, Plus, Check, ChevronsUpDown } from 'lucide-react';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface MakePaymentDialogProps {
     supplierId: string;
@@ -30,6 +45,10 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [accounts, setAccounts] = useState<any[]>([]);
+    const [receivingAccounts, setReceivingAccounts] = useState<any[]>([]);
+    const [fromAccountId, setFromAccountId] = useState('');
+    const [openFromAccount, setOpenFromAccount] = useState(false);
+    const isDesktop = useMediaQuery("(min-width: 768px)");
 
     const supabase = createClient();
 
@@ -44,6 +63,13 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
                     .eq('status', 'active'); // Filter inactive accounts
 
                 if (data) setAccounts(data);
+
+                const { data: recData } = await supabase
+                    .from('financial_accounts')
+                    .select('id, name, currency')
+                    .eq('category', 'receiving')
+                    .eq('status', 'active');
+                if (recData) setReceivingAccounts(recData);
             };
             fetchAccounts();
         }
@@ -93,6 +119,7 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
             amount: parseFloat(amount),
             date,
             destination_account_id: accountId || null,
+            from_account_id: fromAccountId || null,
             transaction_method: method,
             reference_id: reference,
             notes,
@@ -126,6 +153,60 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
                     <div className="space-y-2">
                         <Label>Date</Label>
                         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                    </div>
+
+                    <div className="space-y-2 flex flex-col">
+                        <Label>From Account</Label>
+                        <Popover open={openFromAccount} onOpenChange={setOpenFromAccount}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openFromAccount}
+                                    className={cn(
+                                        "w-full justify-between",
+                                        !fromAccountId && "text-muted-foreground"
+                                    )}
+                                >
+                                    {fromAccountId
+                                        ? receivingAccounts.find(
+                                            (acc) => acc.id === fromAccountId
+                                        )?.name
+                                        : "Select From Account"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search account..." />
+                                    <CommandList>
+                                        <CommandEmpty>No account found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {receivingAccounts.map((acc) => (
+                                                <CommandItem
+                                                    value={acc.name}
+                                                    key={acc.id}
+                                                    onSelect={() => {
+                                                        setFromAccountId(acc.id);
+                                                        setOpenFromAccount(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            acc.id === fromAccountId
+                                                                ? "opacity-100"
+                                                                : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {acc.name} ({acc.currency})
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <div className="space-y-2">
                         <Label>Amount (BDT)</Label>

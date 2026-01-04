@@ -11,7 +11,8 @@ export async function getSupplierPayment(id: string) {
             .select(`
                 *,
                 supplier:contacts(id, name),
-                destination_account:financial_accounts(id, name, currency)
+                destination_account:financial_accounts!destination_account_id(id, name, currency),
+                from_account:financial_accounts!from_account_id(id, name, currency)
             `)
             .eq('id', id)
             .single();

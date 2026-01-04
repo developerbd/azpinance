@@ -25,7 +25,8 @@ export async function getAllSupplierPayments(
         .select(`
             *,
             supplier:contacts(name),
-            destination_account:financial_accounts(name, currency)
+            destination_account:financial_accounts!destination_account_id(name, currency),
+            from_account:financial_accounts!from_account_id(name, currency)
         `, { count: 'exact' });
 
     if (supplierId && supplierId !== 'all') {
@@ -44,7 +45,10 @@ export async function getAllSupplierPayments(
         .order('date', { ascending: false })
         .range(from, to);
 
-    if (error) return { error: error.message };
+    if (error) {
+        console.error('Error fetching supplier payments:', error);
+        return { error: error.message };
+    }
 
     return { data, count };
 }

@@ -14,7 +14,8 @@ export async function getAllPaymentsForExport(
         .select(`
             *,
             supplier:contacts(name),
-            destination_account:financial_accounts(name, currency)
+            destination_account:financial_accounts!destination_account_id(name, currency),
+            from_account:financial_accounts!from_account_id(name, currency)
         `)
         .order('date', { ascending: false });
 

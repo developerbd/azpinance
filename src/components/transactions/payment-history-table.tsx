@@ -76,6 +76,9 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
         if (!error) {
             setPayments(data as any[]);
             setTotalCount(count || 0);
+        } else {
+            console.error('Fetch error:', error);
+            toast.error('Failed to load payments: ' + error);
         }
         setLoading(false);
     }, [page, limit, selectedSupplier, startDate, endDate]);

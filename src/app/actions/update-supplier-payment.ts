@@ -10,6 +10,7 @@ interface UpdateSupplierPaymentParams {
     amount: number;
     date: string;
     destination_account_id: string | null;
+    from_account_id?: string | null;
     transaction_method: string;
     reference_id: string;
     notes: string;
