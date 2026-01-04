@@ -82,16 +82,16 @@ export function SupplierFinancials({ supplierId }: { supplierId: string }) {
                     />
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
-                        <table className="w-full text-sm">
+                    <div className="rounded-md border overflow-x-auto">
+                        <table className="w-full text-sm min-w-full">
                             <thead>
                                 <tr className="border-b bg-muted/50">
-                                    <th className="p-3 text-left">Date</th>
-                                    <th className="p-3 text-left">Amount</th>
-                                    <th className="p-3 text-left">Account</th>
-                                    <th className="p-3 text-left">Method</th>
-                                    <th className="p-3 text-left">Reference</th>
-                                    <th className="p-3 text-left">Attachments</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Date</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Amount</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Account</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Method</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Reference</th>
+                                    <th className="p-3 text-left whitespace-nowrap">Attachments</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -102,14 +102,14 @@ export function SupplierFinancials({ supplierId }: { supplierId: string }) {
                                 ) : (
                                     payments.map((payment) => (
                                         <tr key={payment.id} className="border-b">
-                                            <td className="p-3">{format(new Date(payment.date), 'MMM d, yyyy')}</td>
-                                            <td className="p-3 font-medium">{payment.amount.toLocaleString()} BDT</td>
-                                            <td className="p-3">{payment.destination_account?.name || '-'}</td>
-                                            <td className="p-3 capitalize">{payment.transaction_method.replace('_', ' ')}</td>
-                                            <td className="p-3">{payment.reference_id || '-'}</td>
+                                            <td className="p-3 whitespace-nowrap">{format(new Date(payment.date), 'MMM d, yyyy')}</td>
+                                            <td className="p-3 font-medium whitespace-nowrap">{payment.amount.toLocaleString()} BDT</td>
+                                            <td className="p-3 whitespace-nowrap">{payment.destination_account?.name || '-'}</td>
+                                            <td className="p-3 capitalize whitespace-nowrap">{payment.transaction_method.replace('_', ' ')}</td>
+                                            <td className="p-3 whitespace-nowrap">{payment.reference_id || '-'}</td>
                                             <td className="p-3">
                                                 {payment.attachments && payment.attachments.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-1">
+                                                    <div className="flex flex-wrap gap-1 min-w-[100px]">
                                                         {payment.attachments.map((url: string, i: number) => (
                                                             <a
                                                                 key={i}

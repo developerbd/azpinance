@@ -333,8 +333,8 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
-                        <table className="w-full text-sm">
+                    <div className="rounded-md border overflow-x-auto">
+                        <table className="w-full text-sm min-w-full">
                             <thead>
                                 <tr className="border-b bg-muted/50">
                                     <th className="p-3 w-[40px]">
@@ -379,15 +379,15 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                                                     onChange={() => toggleSelection(payment.id)}
                                                 />
                                             </td>
-                                            <td className="p-3">{format(new Date(payment.date), 'MMM d, yyyy')}</td>
-                                            <td className="p-3 font-medium">{payment.supplier?.name}</td>
-                                            <td className="p-3 font-bold">{payment.amount.toLocaleString()} BDT</td>
-                                            <td className="p-3">{payment.destination_account?.name || '-'}</td>
-                                            <td className="p-3 capitalize">{payment.transaction_method.replace('_', ' ')}</td>
-                                            <td className="p-3">{payment.reference_id || '-'}</td>
+                                            <td className="p-3 whitespace-nowrap">{format(new Date(payment.date), 'MMM d, yyyy')}</td>
+                                            <td className="p-3 font-medium whitespace-nowrap">{payment.supplier?.name}</td>
+                                            <td className="p-3 font-bold whitespace-nowrap">{payment.amount.toLocaleString()} BDT</td>
+                                            <td className="p-3 whitespace-nowrap">{payment.destination_account?.name || '-'}</td>
+                                            <td className="p-3 capitalize whitespace-nowrap">{payment.transaction_method.replace('_', ' ')}</td>
+                                            <td className="p-3 whitespace-nowrap">{payment.reference_id || '-'}</td>
                                             <td className="p-3">
                                                 {payment.attachments && payment.attachments.length > 0 ? (
-                                                    <div className="flex flex-wrap gap-1">
+                                                    <div className="flex flex-wrap gap-1 min-w-[100px]">
                                                         {payment.attachments.map((url: string, i: number) => (
                                                             <a
                                                                 key={i}
@@ -405,7 +405,7 @@ export function PaymentHistoryTable({ userRole = 'guest' }: PaymentHistoryTableP
                                                 )}
                                             </td>
                                             {(canEdit || canDelete) && (
-                                                <td className="p-3 text-right">
+                                                <td className="p-3 text-right whitespace-nowrap">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" className="h-8 w-8 p-0">

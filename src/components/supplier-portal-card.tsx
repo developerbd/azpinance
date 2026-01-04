@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Copy, RefreshCw, ExternalLink } from 'lucide-react'
-import { togglePortalAccess, regeneratePortalToken } from '@/actions/portal-actions'
+import { togglePortalAccess, regeneratePortalToken } from '@/app/actions/portal-actions'
 import { toast } from 'sonner'
 
 interface SupplierPortalCardProps {

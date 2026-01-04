@@ -16,6 +16,16 @@ export async function createSupplierPayment(data: unknown) {
         return { error: 'Unauthorized' };
     }
 
+    const { data: profile } = await supabase
+        .from('users')
+        .select('role, full_name')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role === 'guest') {
+        return { error: 'Permission denied. Guests cannot create payments.' };
+    }
+
     // 2. Validate Input
     let validatedData: SupplierPaymentInput;
     try {
@@ -27,12 +37,7 @@ export async function createSupplierPayment(data: unknown) {
         return { error: 'Invalid input data' };
     }
 
-    // 3. Get user profile for notification
-    const { data: profile } = await supabase
-        .from('users')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
+    // 3. (Profile fetched above for role check)
 
     // 4. Create Payment
     const { data: payment, error: insertError } = await supabase

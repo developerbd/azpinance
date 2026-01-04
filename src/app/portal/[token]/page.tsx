@@ -1,4 +1,4 @@
-import { getSupplierPortalData } from '@/actions/portal-actions'
+import { getSupplierPortalData } from '@/app/actions/portal-actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency } from '@/lib/utils' // Assuming this exists, if not will mock
@@ -105,16 +105,16 @@ export default async function PortalPage({
                             <CardTitle>Forex Transactions</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
-                                <table className="w-full text-sm">
+                            <div className="rounded-md border overflow-x-auto">
+                                <table className="w-full text-sm min-w-full">
                                     <thead className="bg-muted/50 border-b">
                                         <tr className="text-left">
-                                            <th className="p-4 font-medium">Date</th>
-                                            <th className="p-4 font-medium">ID</th>
-                                            <th className="p-4 font-medium text-right">Amount (USD)</th>
-                                            <th className="p-4 font-medium text-right">Rate</th>
-                                            <th className="p-4 font-medium text-right">Amount (BDT)</th>
-                                            <th className="p-4 font-medium">Status</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">Date</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">ID</th>
+                                            <th className="p-4 font-medium text-right whitespace-nowrap">Amount (USD)</th>
+                                            <th className="p-4 font-medium text-right whitespace-nowrap">Rate</th>
+                                            <th className="p-4 font-medium text-right whitespace-nowrap">Amount (BDT)</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -125,12 +125,12 @@ export default async function PortalPage({
                                         ) : (
                                             transactions.data.map((tx: any) => (
                                                 <tr key={tx.id} className="border-b transition-colors hover:bg-muted/50">
-                                                    <td className="p-4">{format(new Date(tx.created_at), 'MMM dd, yyyy')}</td>
-                                                    <td className="p-4 font-mono text-xs text-muted-foreground">{tx.transaction_id || '-'}</td>
-                                                    <td className="p-4 text-right">{formatCurrency(tx.amount)}</td>
-                                                    <td className="p-4 text-right">{tx.exchange_rate}</td>
-                                                    <td className="p-4 text-right">{formatCurrency(tx.amount_bdt, 'BDT')}</td>
-                                                    <td className="p-4">
+                                                    <td className="p-4 whitespace-nowrap">{format(new Date(tx.created_at), 'MMM dd, yyyy')}</td>
+                                                    <td className="p-4 font-mono text-xs text-muted-foreground whitespace-nowrap">{tx.transaction_id || '-'}</td>
+                                                    <td className="p-4 text-right whitespace-nowrap">{formatCurrency(tx.amount)}</td>
+                                                    <td className="p-4 text-right whitespace-nowrap">{tx.exchange_rate}</td>
+                                                    <td className="p-4 text-right whitespace-nowrap">{formatCurrency(tx.amount_bdt, 'BDT')}</td>
+                                                    <td className="p-4 whitespace-nowrap">
                                                         <Badge variant={tx.status === 'approved' ? 'default' : 'secondary'} className={tx.status === 'approved' ? 'bg-green-500 hover:bg-green-600' : ''}>
                                                             {tx.status}
                                                         </Badge>
@@ -141,10 +141,10 @@ export default async function PortalPage({
                                         {/* Total Footer: Only Key Stats */}
                                         {transactions.data.length > 0 && (
                                             <tr className="bg-muted/50 font-medium">
-                                                <td colSpan={2} className="p-4 text-right">Total (All Time)</td>
-                                                <td className="p-4 text-right">{formatCurrency(stats.totalForexUSD)}</td>
-                                                <td className="p-4 text-right"> - </td>
-                                                <td className="p-4 text-right">{formatCurrency(stats.totalForexReceivablesBDT, 'BDT')}</td>
+                                                <td colSpan={2} className="p-4 text-right whitespace-nowrap">Total (All Time)</td>
+                                                <td className="p-4 text-right whitespace-nowrap">{formatCurrency(stats.totalForexUSD)}</td>
+                                                <td className="p-4 text-right whitespace-nowrap"> - </td>
+                                                <td className="p-4 text-right whitespace-nowrap">{formatCurrency(stats.totalForexReceivablesBDT, 'BDT')}</td>
                                                 <td colSpan={1}></td>
                                             </tr>
                                         )}
@@ -166,14 +166,14 @@ export default async function PortalPage({
                             <CardTitle>Payment History</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="rounded-md border">
-                                <table className="w-full text-sm">
+                            <div className="rounded-md border overflow-x-auto">
+                                <table className="w-full text-sm min-w-full">
                                     <thead className="bg-muted/50 border-b">
                                         <tr className="text-left">
-                                            <th className="p-4 font-medium">Date</th>
-                                            <th className="p-4 font-medium">Method</th>
-                                            <th className="p-4 font-medium text-right">Amount (BDT)</th>
-                                            <th className="p-4 font-medium">Reference</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">Date</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">Method</th>
+                                            <th className="p-4 font-medium text-right whitespace-nowrap">Amount (BDT)</th>
+                                            <th className="p-4 font-medium whitespace-nowrap">Reference</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -184,17 +184,17 @@ export default async function PortalPage({
                                         ) : (
                                             payments.data.map((pay: any) => (
                                                 <tr key={pay.id} className="border-b transition-colors hover:bg-muted/50">
-                                                    <td className="p-4">{pay.date ? format(new Date(pay.date), 'MMM dd, yyyy') : '-'}</td>
-                                                    <td className="p-4 capitalize">{pay.transaction_method?.replace('_', ' ') || '-'}</td>
-                                                    <td className="p-4 text-right">{formatCurrency(pay.amount, 'BDT')}</td>
-                                                    <td className="p-4 text-muted-foreground">{pay.reference_id || '-'}</td>
+                                                    <td className="p-4 whitespace-nowrap">{pay.date ? format(new Date(pay.date), 'MMM dd, yyyy') : '-'}</td>
+                                                    <td className="p-4 capitalize whitespace-nowrap">{pay.transaction_method?.replace('_', ' ') || '-'}</td>
+                                                    <td className="p-4 text-right whitespace-nowrap">{formatCurrency(pay.amount, 'BDT')}</td>
+                                                    <td className="p-4 text-muted-foreground whitespace-nowrap">{pay.reference_id || '-'}</td>
                                                 </tr>
                                             ))
                                         )}
                                         {payments.data.length > 0 && (
                                             <tr className="bg-muted/50 font-medium">
-                                                <td colSpan={2} className="p-4">Total Paid</td>
-                                                <td className="p-4 text-right">{formatCurrency(stats.totalPayments, 'BDT')}</td>
+                                                <td colSpan={2} className="p-4 whitespace-nowrap">Total Paid</td>
+                                                <td className="p-4 text-right whitespace-nowrap">{formatCurrency(stats.totalPayments, 'BDT')}</td>
                                                 <td></td>
                                             </tr>
                                         )}

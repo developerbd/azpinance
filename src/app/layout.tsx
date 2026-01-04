@@ -19,10 +19,18 @@ const outfit = Outfit({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "BizAd Finance",
-  description: "Financial Operating System",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const supabase = await createClient();
+  const { data: settings } = await supabase
+    .from('system_settings')
+    .select('company_name')
+    .single();
+
+  return {
+    title: settings?.company_name || "BizAd Finance",
+    description: "Financial Operating System",
+  };
+}
 
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
