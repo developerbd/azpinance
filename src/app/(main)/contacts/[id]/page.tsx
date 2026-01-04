@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Edit, FileText, ExternalLink, Globe, Facebook, MapPin, Phone, Mail, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SupplierFinancials } from '@/components/supplier-financials';
+import { SupplierPortalCard } from '@/components/supplier-portal-card';
 
 export default async function ViewContactPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -15,6 +16,11 @@ export default async function ViewContactPage(props: { params: Promise<{ id: str
         .select('*')
         .eq('id', params.id)
         .single();
+
+    // Using admin client to fetch secure fields if needed, OR relies on SELECT policy.
+    // If 'portal_token' is hidden by RLS, we need to use a different way. 
+    // Assuming RLS allows select for authenticated users (admins/supervisors).
+
 
     if (!contact) {
         notFound();
@@ -123,6 +129,14 @@ export default async function ViewContactPage(props: { params: Promise<{ id: str
 
                 {contact.type === 'supplier' && (
                     <SupplierFinancials supplierId={contact.id} />
+                )}
+
+                {canEdit && contact.type === 'supplier' && (
+                    <SupplierPortalCard
+                        contactId={contact.id}
+                        isActive={contact.is_portal_active}
+                        portalToken={contact.portal_token}
+                    />
                 )}
 
                 {Object.keys(customFields).length > 0 && (
