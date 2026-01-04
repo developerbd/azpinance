@@ -190,6 +190,7 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
                                                         setFromAccountId(acc.id);
                                                         setOpenFromAccount(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(

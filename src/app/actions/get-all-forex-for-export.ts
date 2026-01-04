@@ -6,7 +6,8 @@ export async function getAllForexForExport(
     queryText: string = '',
     status: string = 'all',
     dateFrom: string = '',
-    dateTo: string = ''
+    dateTo: string = '',
+    contactId: string = 'all'
 ) {
     const supabase = await createClient();
 
@@ -24,6 +25,10 @@ export async function getAllForexForExport(
 
     if (status !== 'all') {
         query = query.eq('status', status);
+    }
+
+    if (contactId && contactId !== 'all') {
+        query = query.eq('contact_id', contactId);
     }
 
     if (dateFrom) {

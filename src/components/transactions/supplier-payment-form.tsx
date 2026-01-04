@@ -246,6 +246,7 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
                                                         setFromAccountId(acc.id);
                                                         setOpenFromAccount(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(
@@ -300,6 +301,7 @@ export function SupplierPaymentForm({ initialData, onSuccess, supplierId, mode =
                                                         setFromAccountId(acc.id);
                                                         setOpenFromAccount(false);
                                                     }}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
                                                 >
                                                     <Check
                                                         className={cn(

@@ -39,6 +39,7 @@ export default async function ForexTransactionsPage({
     const to = from + pageSize - 1;
     const q = params.q || '';
     const status = params.status || 'all';
+    const contactId = params.contact || 'all';
     const dateFrom = params.date_from || '';
     const dateTo = params.date_to || '';
 
@@ -54,6 +55,10 @@ export default async function ForexTransactionsPage({
 
     if (status && status !== 'all') {
         query = query.eq('status', status);
+    }
+
+    if (contactId && contactId !== 'all') {
+        query = query.eq('contact_id', contactId);
     }
 
     if (dateFrom) {
@@ -81,6 +86,12 @@ export default async function ForexTransactionsPage({
         console.error('Error fetching stats (function might not exist):', statsError);
     }
 
+    // Fetch Contacts for Filtering
+    const { data: contacts } = await supabase
+        .from('contacts')
+        .select('id, name')
+        .order('name');
+
     return (
         <div className="container mx-auto py-10">
             <div className="flex justify-between items-center mb-6">
@@ -102,6 +113,8 @@ export default async function ForexTransactionsPage({
                 totalCount={count || 0}
                 currentPage={page}
                 pageSize={pageSize}
+                contacts={contacts || []}
+                currentContact={contactId}
             />
         </div>
     );

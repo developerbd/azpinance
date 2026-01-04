@@ -38,7 +38,21 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Edit, Trash, CheckCircle, DollarSign, Search, Filter, X, Square, RefreshCw } from 'lucide-react';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { MoreHorizontal, Edit, Trash, CheckCircle, DollarSign, Search, Filter, X, Square, RefreshCw, Check, ChevronsUpDown } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -68,9 +82,11 @@ interface ForexListProps {
     totalCount: number;
     currentPage: number;
     pageSize: number;
+    contacts: { id: string; name: string }[];
+    currentContact: string;
 }
 
-export function ForexList({ initialTransactions, userRole, totalCount, currentPage, pageSize }: ForexListProps) {
+export function ForexList({ initialTransactions, userRole, totalCount, currentPage, pageSize, contacts, currentContact }: ForexListProps) {
     const [transactions, setTransactions] = useState<ForexTransaction[]>(initialTransactions);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const router = useRouter();
@@ -85,8 +101,10 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
     // Filter States
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
+    const [contactFilter, setContactFilter] = useState(searchParams.get('contact') || 'all');
     const [dateFrom, setDateFrom] = useState(searchParams.get('date_from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('date_to') || '');
+    const [openContact, setOpenContact] = useState(false);
 
     const normalizedRole = (userRole || '').toLowerCase();
     const isAdmin = normalizedRole === 'admin';
@@ -133,6 +151,12 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
         updateUrl({ status: val });
     };
 
+    const handleContactChange = (val: string) => {
+        setContactFilter(val);
+        setOpenContact(false);
+        updateUrl({ contact: val });
+    };
+
     const handleDateChange = () => {
         updateUrl({ date_from: dateFrom, date_to: dateTo });
     };
@@ -143,13 +167,15 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
 
     const handleClearFilters = () => {
         setSearchQuery('');
+        setSearchQuery('');
         setStatusFilter('all');
+        setContactFilter('all');
         setDateFrom('');
         setDateTo('');
         router.push(pathname);
     };
 
-    const hasFilters = searchQuery || statusFilter !== 'all' || dateFrom || dateTo;
+    const hasFilters = searchQuery || statusFilter !== 'all' || contactFilter !== 'all' || dateFrom || dateTo;
 
     // ... (Action handlers: handleApprove, handleMarkPaid, handleDelete - same as before)
     const handleApprove = async (id: string) => {
@@ -191,7 +217,7 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
         setIsExporting(true);
         try {
             const { getAllForexForExport } = await import('@/app/actions/get-all-forex-for-export');
-            const { data, error } = await getAllForexForExport(searchQuery, statusFilter, dateFrom, dateTo);
+            const { data, error } = await getAllForexForExport(searchQuery, statusFilter, dateFrom, dateTo, contactFilter);
 
             if (error || !data) {
                 toast.error('Failed to fetch data for export');
@@ -397,6 +423,63 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                         </SelectContent>
                     </Select>
 
+                    <div className="relative">
+                        <Popover open={openContact} onOpenChange={setOpenContact}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openContact}
+                                    className="w-[200px] justify-between"
+                                >
+                                    {contactFilter && contactFilter !== 'all'
+                                        ? contacts.find((contact) => contact.id === contactFilter)?.name
+                                        : "All Contacts"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search contact..." />
+                                    <CommandList>
+                                        <CommandEmpty>No contact found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                value="all"
+                                                onSelect={() => handleContactChange("all")}
+                                                className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        contactFilter === "all" ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                All Contacts
+                                            </CommandItem>
+                                            {contacts.map((contact) => (
+                                                <CommandItem
+                                                    key={contact.id}
+                                                    value={contact.name}
+                                                    onSelect={() => handleContactChange(contact.id)}
+                                                    className="data-[disabled]:pointer-events-auto data-[disabled]:opacity-100"
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            contactFilter === contact.id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {contact.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
                     <div className="flex items-center gap-2">
                         <Input
                             type="date"
@@ -536,29 +619,31 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
             </Card>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-end gap-2 py-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage <= 1}
-                    >
-                        Previous
-                    </Button>
-                    <div className="text-sm font-medium">
-                        Page {currentPage} of {totalPages}
+            {
+                totalPages > 1 && (
+                    <div className="flex items-center justify-end gap-2 py-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage <= 1}
+                        >
+                            Previous
+                        </Button>
+                        <div className="text-sm font-medium">
+                            Page {currentPage} of {totalPages}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage >= totalPages}
+                        >
+                            Next
+                        </Button>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage >= totalPages}
-                    >
-                        Next
-                    </Button>
-                </div>
-            )}
+                )
+            }
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
@@ -574,6 +659,6 @@ export function ForexList({ initialTransactions, userRole, totalCount, currentPa
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     );
 }
