@@ -156,7 +156,7 @@ const items = [
     },
 ];
 
-export function Sidebar({ companyName = 'BizAd', className }: { companyName?: string; className?: string }) {
+export function Sidebar({ companyName = 'BizAd', className, version }: { companyName?: string; className?: string; version?: string }) {
     const pathname = usePathname();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
     const [userRole, setUserRole] = useState<string>('guest');
@@ -269,7 +269,12 @@ export function Sidebar({ companyName = 'BizAd', className }: { companyName?: st
                 </div>
                 <div>
                     <h1 className="font-bold text-xl tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">{companyName}</h1>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Finance OS</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Finance OS</p>
+                        {version && (
+                            <span className="text-[9px] font-mono bg-muted/50 px-1.5 py-0.5 rounded text-muted-foreground">v{version}</span>
+                        )}
+                    </div>
                 </div>
             </div>
 

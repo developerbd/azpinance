@@ -33,13 +33,15 @@ export default async function MainLayout({
     const timezone = settings?.timezone || 'UTC';
     const companyName = settings?.company_name || 'BizAd';
 
+    const { version } = await import('../../../package.json');
+
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
             <div className="hidden md:block">
                 <div className="flex h-full max-h-screen flex-col gap-2">
                     {/* Branding is now handled dynamically inside Sidebar */}
                     <div className="flex-1 p-4">
-                        <Sidebar companyName={companyName} />
+                        <Sidebar companyName={companyName} version={version} />
                     </div>
                 </div>
             </div>
