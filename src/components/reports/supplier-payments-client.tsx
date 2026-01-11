@@ -40,7 +40,8 @@ export default function SupplierPaymentsReportClient() {
                 date,
                 supplier:contacts(name),
                 transaction_method,
-                destination_account:financial_accounts(name)
+                destination_account:financial_accounts!destination_account_id(name),
+                from_account:financial_accounts!from_account_id(name)
             `)
             .gte('date', startDate)
             .lte('date', endDate)
@@ -135,7 +136,8 @@ export default function SupplierPaymentsReportClient() {
                     Date: format(new Date(p.date), 'yyyy-MM-dd'),
                     Supplier: p.supplier?.name,
                     Amount: p.amount,
-                    Account: p.destination_account?.name,
+                    'Paid From': p.from_account?.name || 'N/A',
+                    'Destination': p.destination_account?.name,
                     Method: p.transaction_method
                 }));
                 // Sanitize data for security

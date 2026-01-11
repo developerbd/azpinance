@@ -34,7 +34,7 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     const [forexResult, invoicesResult, paymentsResult, forecast] = await Promise.all([
         supabase
             .from('forex_transactions')
-            .select('id, amount, amount_bdt, transaction_date, status, contact_id')
+            .select('id, amount, amount_bdt, transaction_date, created_at, status, contact_id')
             .eq('status', 'approved')
             .order('transaction_date', { ascending: false })
             .limit(1000), // Reasonable limit for performance
@@ -144,7 +144,7 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     const recentForex = (forexData || []).slice(0, 5).map(tx => ({
         type: 'forex',
         id: tx.id,
-        date: tx.transaction_date,
+        date: tx.created_at, // Use created_at for accurate timestamp in feed
         amount: tx.amount,
         description: `Forex Inflow`,
         status: tx.status
