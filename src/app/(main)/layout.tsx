@@ -23,6 +23,23 @@ export default async function MainLayout({
         redirect('/login');
     }
 
+    // Check for suspension
+    const { data: profile } = await supabase
+        .from('users')
+        .select('status')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.status === 'suspended') {
+        await supabase.auth.signOut();
+        redirect('/login?error=suspended');
+    }
+
+    if (profile?.status === 'pending') {
+        await supabase.auth.signOut();
+        redirect('/login?error=pending');
+    }
+
     // Fetch system settings for timezone
     // Fetch system settings for timezone and branding
     const { data: settings } = await supabase

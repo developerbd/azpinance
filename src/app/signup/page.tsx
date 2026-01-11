@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,28 @@ export default function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [signupEnabled, setSignupEnabled] = useState(true);
+    const [checkingSettings, setCheckingSettings] = useState(true);
+    const [successMessage, setSuccessMessage] = useState('');
+
     const router = useRouter();
     const supabase = createClient();
+
+    // Fetch Signup Settings
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const { getSignupSettings } = await import('@/app/actions/get-signup-settings');
+                const { signup_enabled } = await getSignupSettings();
+                setSignupEnabled(signup_enabled);
+            } catch (error) {
+                console.error('Failed to fetch settings', error);
+            } finally {
+                setCheckingSettings(false);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,12 +64,60 @@ export default function SignupPage() {
         if (error) {
             toast.error(error.message);
         } else {
-            toast.success('Check your email for the confirmation link.');
-            // For development with "Enable email confirmations" off, it might auto-login
-            router.push('/dashboard');
+            // Force sign out just in case auto-login happened, so they don't hit dashboard with pending error immediately
+            await supabase.auth.signOut();
+
+            setSuccessMessage('Your account has been created and is currently pending administrator approval. You will be able to log in once your account is approved.');
+            toast.success('Account created successfully');
         }
         setLoading(false);
     };
+
+    if (checkingSettings) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">
+                <div>Loading...</div>
+            </div>
+        );
+    }
+
+    if (!signupEnabled) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle>Sign Up Closed</CardTitle>
+                        <CardDescription>New account registration is currently disabled by the administrator.</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-center">
+                        <Button variant="link" onClick={() => router.push('/login')}>
+                            Back to Login
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        );
+    }
+
+    if (successMessage) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle className="text-green-600">Registration Successful</CardTitle>
+                        <CardDescription>
+                            {successMessage}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-center">
+                        <Button onClick={() => router.push('/login')}>
+                            Back to Login
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 
 import {
     Select,
@@ -25,6 +26,7 @@ export default function GeneralSettingsForm({ settings, readOnly = false }: { se
         company_email: settings?.company_email || '',
         company_address: settings?.company_address || '',
         timezone: settings?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        signup_enabled: settings?.signup_enabled ?? true,
     });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,6 +157,31 @@ export default function GeneralSettingsForm({ settings, readOnly = false }: { se
                     This timezone will be used for all application dates and times.
                 </p>
             </div>
+            {/* Signup Toggle */}
+            <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                    <Label className="text-base">Allow New Signups</Label>
+                    <p className="text-sm text-muted-foreground">
+                        If disabled, the signup page will be inaccessible and hidden from the login screen.
+                    </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        checked={formData.signup_enabled ?? true}
+                        onCheckedChange={async (checked) => {
+                            setFormData(prev => ({ ...prev, signup_enabled: checked }));
+                            if (!readOnly) {
+                                const { toggleSignup } = await import('@/app/actions/toggle-signup');
+                                const res = await toggleSignup(checked);
+                                if (res.error) toast.error(res.error);
+                                else toast.success(`Signups ${checked ? 'enabled' : 'disabled'}`);
+                            }
+                        }}
+                        disabled={readOnly}
+                    />
+                </div>
+            </div>
+
             {!readOnly && (
                 <Button onClick={handleSave} disabled={loading}>
                     {loading ? 'Saving...' : 'Save Changes'}

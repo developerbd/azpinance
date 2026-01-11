@@ -63,7 +63,7 @@ type User = {
     full_name: string | null;
     username: string | null;
     role: 'admin' | 'supervisor' | 'accountant' | 'guest';
-    status: 'active' | 'suspended';
+    status: 'active' | 'suspended' | 'pending';
     created_at: string;
     is_super_admin?: boolean;
     is_2fa_exempt?: boolean;
@@ -222,12 +222,13 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
         return false;
     };
 
-    const toggleStatus = async (userId: string, currentStatus: string) => {
+    const toggleStatus = async (userId: string, targetStatus: string) => {
         // Check permission
         const targetUser = users.find(u => u.id === userId);
         if (!targetUser || !canManageUser(targetUser)) return;
 
-        const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+        // The argument passed is already the desired target status
+        const newStatus = targetStatus;
 
         try {
             const { updateUserStatus } = await import('@/app/actions/update-user-status');
@@ -556,7 +557,11 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge className={user.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>
+                                    <Badge className={
+                                        user.status === 'active' ? 'bg-green-500' :
+                                            user.status === 'suspended' ? 'bg-red-500' :
+                                                'bg-yellow-500'
+                                    }>
                                         {user.status}
                                     </Badge>
                                 </TableCell>
@@ -595,9 +600,15 @@ export default function UserList({ initialUsers, currentUserRole, currentUserIsS
 
                                                         <DropdownMenuSeparator />
 
+                                                        <DropdownMenuSeparator />
+
                                                         {!user.is_super_admin && (
                                                             <>
-                                                                {user.status === 'active' ? (
+                                                                {user.status === 'pending' ? (
+                                                                    <DropdownMenuItem onClick={() => toggleStatus(user.id, 'active')}>
+                                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Approve User
+                                                                    </DropdownMenuItem>
+                                                                ) : user.status === 'active' ? (
                                                                     <DropdownMenuItem onClick={() => toggleStatus(user.id, 'suspended')}>
                                                                         <Ban className="mr-2 h-4 w-4" /> Suspend
                                                                     </DropdownMenuItem>

@@ -73,6 +73,11 @@ export async function createUser(formData: FormData) {
             if (role !== 'guest') {
                 updates.role = role;
             }
+            if (username) {
+                updates.username = username;
+            }
+            // Admin created users should be active by default
+            updates.status = 'active';
 
             const { error: updateError } = await adminSupabase
                 .from('users')
