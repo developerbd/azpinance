@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface MobileNavProps {
     companyName?: string;
@@ -12,6 +12,13 @@ interface MobileNavProps {
 
 export function MobileNav({ companyName }: MobileNavProps) {
     const [open, setOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) return null;
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
