@@ -30,25 +30,29 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     }
 
     // 1. Fetch Core Data with limits to prevent excessive data fetching
-    // 1. Fetch Core Data Parallelly
+    // NOTE: sorting by created_at in main query to catch recently entered data, 
+    // but typically metrics might require 'transaction_date'.
+    // However, if we recently entered old data, we want it included in calculations?
+    // Actually, limits are simple hacks. Real solution is aggregation. 
+    // Keeping limits high (1000) makes it safer for small-medium usage.
     const [forexResult, invoicesResult, paymentsResult, forecast] = await Promise.all([
         supabase
             .from('forex_transactions')
             .select('id, amount, amount_bdt, transaction_date, created_at, status, contact_id')
-            .eq('status', 'approved')
-            .order('transaction_date', { ascending: false })
-            .limit(1000), // Reasonable limit for performance
+            //.eq('status', 'approved') // REMOVED: Fetch all for activity feed
+            .order('created_at', { ascending: false })
+            .limit(1000),
         supabase
             .from('invoices')
             .select('id, total_amount, status, due_date, created_at, invoice_number')
             .neq('status', 'paid')
             .order('created_at', { ascending: false })
-            .limit(500), // Limit unpaid invoices
+            .limit(500),
         supabase
             .from('supplier_payments')
-            .select('id, amount, date, supplier_id')
-            .order('date', { ascending: false })
-            .limit(1000), // Limit payments
+            .select('id, amount, date, created_at, supplier_id')
+            .order('created_at', { ascending: false })
+            .limit(1000),
         getCashFlowForecast(30)
     ]);
 
@@ -58,8 +62,9 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
 
     // 2. Calculate Metrics
 
-    // Total Volume (USD) - Global
-    const total_volume_usd = forexData?.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0) || 0;
+    // Total Volume (USD) - Global (Only Approved)
+    const approvedForex = forexData?.filter(tx => tx.status === 'approved') || [];
+    const total_volume_usd = approvedForex.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0) || 0;
 
     // We need to group data by Contact/Supplier to calculate accurate float per supplier
     // Interface for our aggregation
@@ -81,8 +86,8 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
 
     // Process Forex (Liabilities)
     let global_liability_bdt = 0;
-    if (forexData) {
-        forexData.forEach(tx => {
+    if (approvedForex.length > 0) {
+        approvedForex.forEach(tx => {
             const stats = getStats(tx.contact_id);
             const amount_usd = Number(tx.amount) || 0;
             const amount_bdt = Number(tx.amount_bdt) || 0;
@@ -137,32 +142,42 @@ export async function getComprehensiveDashboardStats(): Promise<DashboardStats> 
     }
 
     // 3. Chart Data (Reuse existing logic)
-    // 3. Chart Data (Reuse existing logic)
     // forecast is moved to Promise.all above
 
     // 4. Recent Activity Feed (Merge & Sort) - Only top 10 for performance
-    const recentForex = (forexData || []).slice(0, 5).map(tx => ({
+    // 4. Recent Activity Feed (Merge & Sort)
+    // We need a specific query for Forex Activity to include PENDING transactions and potentially use updated_at
+    // But since we can't easily change the main Promise.all without fetching duplicate data or complex logic,
+    // we will just use the fetched data if it's sufficient, OR add a specific activity query.
+    // Given the requirement "Pending" should show, and the main query filters "Approved", we MUST fetch separately or change the main query.
+    // Changing main query to fetch ALL and filtering in JS for metrics is safer for small datasets (limit 1000).
+
+    // Activity Mapping
+    const recentForex = (forexData || []).map(tx => ({
         type: 'forex',
         id: tx.id,
-        date: tx.created_at, // Use created_at for accurate timestamp in feed
+        date: tx.created_at, // Activity Time
+        transactionDate: tx.transaction_date, // Display Date
         amount: tx.amount,
         description: `Forex Inflow`,
         status: tx.status
     }));
 
-    const recentInvoices = (invoices || []).slice(0, 5).map(inv => ({
+    const recentInvoices = (invoices || []).map(inv => ({
         type: 'invoice',
         id: inv.id,
         date: inv.created_at,
+        transactionDate: inv.created_at, // Use created_at as fallback for invoices
         amount: inv.total_amount,
         description: `Invoice #${inv.invoice_number}`,
         status: inv.status
     }));
 
-    const recentPayments = (payments || []).slice(0, 5).map(pay => ({
+    const recentPayments = (payments || []).map(pay => ({
         type: 'payment',
         id: pay.id,
-        date: pay.date,
+        date: pay.created_at, // Activity Time
+        transactionDate: pay.date, // Display Date (Transaction Date)
         amount: pay.amount,
         description: `Supplier Payment`,
         status: 'completed'

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { ForexList } from '@/components/transactions/forex-list';
+import { ForexImportDialog } from '@/components/transactions/forex-import-dialog';
 import { ForexStats } from '@/components/transactions/forex-stats';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -97,11 +98,14 @@ export default async function ForexTransactionsPage({
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-heading font-semibold tracking-tight">Forex Transactions</h1>
                 {canAdd && (
-                    <Link href="/transactions/forex/new">
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Record
-                        </Button>
-                    </Link>
+                    <div className="flex gap-2">
+                        <ForexImportDialog />
+                        <Link href="/transactions/forex/new">
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" /> Add Record
+                            </Button>
+                        </Link>
+                    </div>
                 )}
             </div>
 

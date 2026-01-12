@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
+import { TimezoneSelect } from '@/components/ui/timezone-select';
 
 import {
     Select,
@@ -137,22 +138,11 @@ export default function GeneralSettingsForm({ settings, readOnly = false }: { se
             </div>
             <div className="grid gap-2">
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select
+                <TimezoneSelect
                     value={formData.timezone}
                     onValueChange={(val) => setFormData({ ...formData, timezone: val })}
                     disabled={readOnly}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Intl.supportedValuesOf('timeZone').map((tz) => (
-                            <SelectItem key={tz} value={tz}>
-                                {tz}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                />
                 <p className="text-xs text-muted-foreground">
                     This timezone will be used for all application dates and times.
                 </p>

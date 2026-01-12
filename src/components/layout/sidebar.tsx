@@ -164,9 +164,11 @@ export function Sidebar({ companyName = 'BizAd', className, version }: { company
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
     const [is2FAExempt, setIs2FAExempt] = useState(false);
     const [urgentRenewalsCount, setUrgentRenewalsCount] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
     const supabase = createClient();
 
     useEffect(() => {
+        setIsMounted(true);
         const newOpenMenus: Record<string, boolean> = {};
         items.forEach(item => {
             if (item.submenu && pathname.startsWith(item.href)) {
@@ -199,6 +201,25 @@ export function Sidebar({ companyName = 'BizAd', className, version }: { company
         fetchRole();
         fetchBadge();
     }, []);
+
+    if (!isMounted) {
+        return (
+            <div className={cn("flex flex-col h-full bg-background/80 backdrop-blur-xl border border-border/40 shadow-2xl shadow-primary/5 rounded-3xl overflow-hidden", className)}>
+                <div className="p-6 pb-6 flex items-center gap-3 border-b border-border/10">
+                    <div className="h-10 w-10 rounded-xl bg-muted/20 animate-pulse" />
+                    <div className="space-y-2">
+                        <div className="h-4 w-24 bg-muted/20 rounded animate-pulse" />
+                        <div className="h-2 w-16 bg-muted/20 rounded animate-pulse" />
+                    </div>
+                </div>
+                <div className="flex-1 px-3 py-4 space-y-1">
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="h-10 w-full bg-muted/10 rounded-lg animate-pulse" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     const toggleMenu = (title: string) => {
         setOpenMenus(prev => ({

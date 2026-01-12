@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeftRight, FileText, CreditCard, CheckCircle2, Clock } from 'lucide-react';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { FormattedDateTime } from '@/components/ui/formatted-date-time';
 
 interface ActivityFeedProps {
     activities: any[];
@@ -19,7 +19,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
         <Card className="h-full flex flex-col overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/40 bg-muted/5">
                 <CardTitle className="text-base font-semibold tracking-tight">Recent Activity</CardTitle>
-                <Link href="/transactions/forex">
+                <Link href="/activity">
                     <Button variant="ghost" size="sm" className="h-8 text-xs font-medium text-muted-foreground hover:text-primary">
                         View All <ChevronRight className="ml-1 h-3 w-3" />
                     </Button>
@@ -48,19 +48,26 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{activity.description}</p>
                                         <p className="text-[11px] text-muted-foreground">
-                                            {format(new Date(activity.date), 'MMM d, h:mm a')}
+                                            <FormattedDateTime date={activity.date} formatStr="MMM d, h:mm a" />
                                         </p>
                                     </div>
 
                                     <div className="text-right">
-                                        <p className={cn(
-                                            "text-sm font-bold tabular-nums",
-                                            activity.type === 'forex' ? "text-blue-600" :
-                                                activity.type === 'invoice' ? "text-emerald-600" : "text-orange-600"
-                                        )}>
-                                            {activity.type === 'forex' ? '$' : '৳'}
-                                            {Number(activity.amount).toLocaleString()}
-                                        </p>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {activity.transactionDate && (
+                                                <span className="text-[10px] text-muted-foreground font-medium opacity-80">
+                                                    <FormattedDateTime date={activity.transactionDate} formatStr="MMM d, yy" />
+                                                </span>
+                                            )}
+                                            <p className={cn(
+                                                "text-sm font-bold tabular-nums",
+                                                activity.type === 'forex' ? "text-blue-600" :
+                                                    activity.type === 'invoice' ? "text-emerald-600" : "text-orange-600"
+                                            )}>
+                                                {activity.type === 'forex' ? '$' : '৳'}
+                                                {Number(activity.amount).toLocaleString()}
+                                            </p>
+                                        </div>
                                         <div className="flex items-center justify-end gap-1 mt-0.5">
                                             {activity.status === 'approved' || activity.status === 'paid' || activity.status === 'completed' ? (
                                                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FileUpload } from '@/components/file-upload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Shield, Check, X, Smartphone } from 'lucide-react';
+import { User, Shield, Check, X } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -19,9 +19,15 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { TimezoneSelect } from "@/components/ui/timezone-select";
 
 export default function ProfilePage() {
     const [user, setUser] = useState<any>(null);
@@ -29,6 +35,7 @@ export default function ProfilePage() {
     const [username, setUsername] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string[]>([]);
     const [headerPreference, setHeaderPreference] = useState('avatar_only');
+    const [timezone, setTimezone] = useState('');
     const [loading, setLoading] = useState(false);
 
     // Password Change State
@@ -45,12 +52,12 @@ export default function ProfilePage() {
     const [mfaSecret, setMfaSecret] = useState('');
     const [mfaFactorId, setMfaFactorId] = useState('');
     const [mfaLoading, setMfaLoading] = useState(false);
-
     const [mfaError, setMfaError] = useState('');
     const [showDisableDialog, setShowDisableDialog] = useState(false);
 
     const supabase = createClient();
     const router = useRouter();
+    const timezones = Intl.supportedValuesOf('timeZone');
 
     useEffect(() => {
         fetchProfile();
@@ -73,6 +80,7 @@ export default function ProfilePage() {
                 setUsername(profile.username || '');
                 setAvatarUrl(profile.avatar_url ? [profile.avatar_url] : []);
                 setHeaderPreference(profile.header_display_preference || 'avatar_only');
+                setTimezone(profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
             }
         }
     };
@@ -153,20 +161,16 @@ export default function ProfilePage() {
 
     const confirmDisableMFA = async () => {
         setShowDisableDialog(false);
-
         setMfaLoading(true);
         try {
             // Unenroll all verified TOTP factors
             const verifiedFactors = mfaFactors.filter(f => f.factor_type === 'totp' && f.status === 'verified');
-
             for (const factor of verifiedFactors) {
                 const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
                 if (error) throw error;
             }
-
             toast.success('Two-Factor Authentication disabled');
             fetchMfaStatus();
-
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -178,12 +182,12 @@ export default function ProfilePage() {
         e.preventDefault();
         setLoading(true);
 
-
         const updates = {
             full_name: fullName,
             username: username,
             avatar_url: avatarUrl[0] || null,
             header_display_preference: headerPreference,
+            timezone: timezone,
             updated_at: new Date().toISOString(),
         };
 
@@ -195,12 +199,11 @@ export default function ProfilePage() {
 
             if (error) throw error;
 
-            toast.success('Profile updated successfully');
-            router.refresh();
+            toast.success('Profile updated successfully (refresh to apply timezone)');
+            window.location.reload();
         } catch (error: any) {
             console.error("Profile update error:", error);
             toast.error(error.message || "Failed to update profile");
-        } finally {
             setLoading(false);
         }
     };
@@ -238,7 +241,7 @@ export default function ProfilePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Profile Information</CardTitle>
-                        <CardDescription>Update your personal details.</CardDescription>
+                        <CardDescription>Update your personal details and preferences.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleProfileUpdate} className="space-y-4">
@@ -262,6 +265,18 @@ export default function ProfilePage() {
                                     placeholder="Your Name"
                                 />
                             </div>
+
+                            <div className="space-y-2">
+                                <Label>Timezone</Label>
+                                <TimezoneSelect
+                                    value={timezone}
+                                    onValueChange={setTimezone}
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    Your dashboard dates will be displayed in this timezone.
+                                </p>
+                            </div>
+
                             <div className="space-y-4">
                                 <Label>Avatar</Label>
                                 <div className="flex items-center gap-4">
