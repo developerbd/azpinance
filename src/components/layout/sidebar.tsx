@@ -152,6 +152,10 @@ const items = [
                 title: 'Notifications',
                 href: '/settings/notifications',
             },
+            {
+                title: 'Backup & Restore',
+                href: '/settings/backup',
+            },
         ],
     },
 ];
@@ -239,8 +243,14 @@ export function Sidebar({ companyName = 'BizAd', className, version }: { company
 
         if (item.title === 'Settings' && item.submenu) {
             let filteredSubmenu = item.submenu;
+
+            // Only Admin sees Backup & Restore
+            if (userRole !== 'admin') {
+                filteredSubmenu = filteredSubmenu.filter(sub => sub.title !== 'Backup & Restore');
+            }
+
             if (['admin', 'supervisor'].includes(userRole)) {
-                // Admin and Supervisor see everything (no filtering needed)
+                // Admin and Supervisor see everything (except Backup if filtered above)
             } else if (userRole === 'accountant') {
                 filteredSubmenu = filteredSubmenu.filter(sub =>
                     ['General', 'Integrations', 'Notifications'].includes(sub.title)
