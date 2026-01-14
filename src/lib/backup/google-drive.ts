@@ -28,8 +28,8 @@ export function setCredentials(tokens: any) {
 }
 
 // Ensure we have a dedicated folder
-export async function getOrCreateBackupFolder(folderName = 'BizAdFinance Backups') {
-    const drive = google.drive({ version: 'v3', auth: driveClient });
+export async function getOrCreateBackupFolder(folderName = 'BizAdFinance Backups', authClient?: any) {
+    const drive = google.drive({ version: 'v3', auth: authClient || driveClient });
 
     // Check if folder exists
     const res = await drive.files.list({
@@ -59,10 +59,11 @@ export async function uploadBackup(
     fileName: string,
     fileStream: Readable,
     mimeType: string,
-    description: string
+    description: string,
+    authClient?: any
 ) {
-    const drive = google.drive({ version: 'v3', auth: driveClient });
-    const folderId = await getOrCreateBackupFolder();
+    const drive = google.drive({ version: 'v3', auth: authClient || driveClient });
+    const folderId = await getOrCreateBackupFolder('BizAdFinance Backups', authClient);
 
     const requestBody = {
         name: fileName,
@@ -84,9 +85,9 @@ export async function uploadBackup(
     return response.data;
 }
 
-export async function listBackups(limit = 10) {
-    const drive = google.drive({ version: 'v3', auth: driveClient });
-    const folderId = await getOrCreateBackupFolder();
+export async function listBackups(limit = 10, authClient?: any) {
+    const drive = google.drive({ version: 'v3', auth: authClient || driveClient });
+    const folderId = await getOrCreateBackupFolder('BizAdFinance Backups', authClient);
 
     const res = await drive.files.list({
         q: `'${folderId}' in parents and trashed=false`,
@@ -98,7 +99,7 @@ export async function listBackups(limit = 10) {
     return res.data.files || [];
 }
 
-export async function deleteBackup(fileId: string) {
-    const drive = google.drive({ version: 'v3', auth: driveClient });
+export async function deleteBackup(fileId: string, authClient?: any) {
+    const drive = google.drive({ version: 'v3', auth: authClient || driveClient });
     await drive.files.delete({ fileId });
 }

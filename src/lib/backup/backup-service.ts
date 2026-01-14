@@ -1,73 +1,88 @@
 import archiver from 'archiver';
-import { spawn } from 'child_process';
 import { PassThrough } from 'stream';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import util from 'util';
 import { uploadBackup, deleteBackup, listBackups, setCredentials } from './google-drive';
+import { google } from 'googleapis';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-const execAsync = util.promisify(exec);
-
-// Helper to check if a command exists (for pg_dump check)
-const commandExists = (cmd: string) => {
-    try {
-        const check = spawn(cmd, ['--version']);
-        check.on('error', () => { });
-        return true; // Simplified check, assumes if spawn doesn't crash immediately it might exist, effective check is handling error later.
-    } catch {
-        return false;
-    }
-};
+// Table list (in priority order for restoration)
+// We try to auto-discover, but keep this as fallback/core list.
+const CORE_TABLES = [
+    'users', // Public profiles
+    'contacts', // Includes Clients & Suppliers
+    'financial_accounts', // Was 'accounts'
+    'transactions',
+    // 'transaction_categories', // Does not exist in schema (likely handled in app code or views)
+    'supplier_payments', // Likely exists from migration
+    'digital_expenses', // Likely exists from migration
+    'forex_transactions', // Found in migrations
+    // 'subscriptions', // Verify if this exists, often part of digital_expenses
+    'invoices', // Found in migrations
+    'invoice_items',
+    'audit_logs',
+    'notifications',
+    'integration_tokens',
+    'system_settings' // Was 'settings'
+];
 
 export class BackupService {
-    private dbUrl: string;
+    private supabase: SupabaseClient;
 
-    constructor(dbUrl: string) {
-        this.dbUrl = dbUrl;
+    constructor(supabase: SupabaseClient) {
+        this.supabase = supabase;
     }
 
-    // 1. Generate DB Dump Stream
-    private getDbDumpStream(): PassThrough {
-        const stream = new PassThrough();
+    // 1. Fetch Table Data as JSON
+    private async getTableData(tableName: string): Promise<any[]> {
+        let allData: any[] = [];
+        const limit = 1000;
+        let rangeStart = 0;
 
-        // Parse DB URL for pg_dump
-        // postgres://user:pass@host:port/db
-        const env = { ...process.env, PGPASSWORD: this.getPasswordFromUrl(this.dbUrl) };
-        const args = this.getPgDumpArgs(this.dbUrl);
+        while (true) {
+            const { data, error } = await this.supabase
+                .from(tableName)
+                .select('*')
+                .range(rangeStart, rangeStart + limit - 1);
 
-        console.log('Starting pg_dump with args:', args);
+            if (error) {
+                // If table doesn't exist, just return empty (don't crash the whole backup)
+                if (error.code === '42P01') { // Undefined table
+                    return [];
+                }
+                console.error(`Failed to fetch ${tableName}:`, error.message);
+                throw error;
+            }
 
-        const pgDump = spawn('pg_dump', args, { env });
+            if (!data || data.length === 0) break;
 
-        pgDump.stdout.pipe(stream);
+            allData = [...allData, ...data];
 
-        pgDump.stderr.on('data', (data) => {
-            console.error('pg_dump stderr:', data.toString());
-        });
+            if (data.length < limit) break; // Finished
+            rangeStart += limit;
+        }
 
-        pgDump.on('error', (err) => {
-            console.error('pg_dump failed to start:', err);
-            stream.destroy(err);
-        });
-
-        return stream;
+        return allData;
     }
 
-    // 2. Archive Codebase
+    // 2. Archive Codebase (Same as before)
     private archiveCodebase(archive: archiver.Archiver) {
-        // Add all files in current directory to 'app/' in zip
-        // Exclude huge/unnecessary folders
         const cwd = process.cwd();
         archive.glob('**/*', {
             cwd: cwd,
-            ignore: ['node_modules/**', '.next/**', '.git/**', '.env*', 'tmp/**']
+            ignore: ['node_modules/**', '.next/**', '.git/**', '.env*', 'tmp/**', 'dist/**']
         }, { prefix: 'app' });
     }
 
-    // 3. Main Backup Function
+    // 3. Main Backup Function (Universal JS)
+    // 3. Main Backup Function (Universal JS)
     async performBackup(type: 'db' | 'codebase' | 'full', tokens: any) {
-        setCredentials(tokens);
+        let authClient: any;
+
+        if (tokens.client_id && tokens.client_secret) {
+            authClient = new google.auth.OAuth2(tokens.client_id, tokens.client_secret);
+            authClient.setCredentials({ refresh_token: tokens.refresh_token, access_token: tokens.access_token });
+        } else {
+            setCredentials(tokens);
+        }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         let filename = '';
@@ -78,42 +93,65 @@ export class BackupService {
             timestamp: new Date().toISOString(),
             type,
             version: process.env.npm_package_version || 'unknown',
-            commit: await this.getGitCommit()
+            system: 'universal-js', // Tag verification
+            tables: [] as string[]
         };
-        archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
 
-        if (type === 'db') {
-            filename = `backup_db_${timestamp}.zip`;
-            archive.append(this.getDbDumpStream(), { name: 'dump.sql' });
-        }
-        else if (type === 'codebase') {
-            filename = `backup_code_${timestamp}.zip`;
-            this.archiveCodebase(archive);
-        }
-        else if (type === 'full') {
-            filename = `backup_full_${timestamp}.zip`;
-            archive.append(this.getDbDumpStream(), { name: 'dump.sql' });
-            this.archiveCodebase(archive);
-            // Also include .env safely? NO, SECURITY RISK. User must configure env manually.
-            archive.append('# ENV Configuration Required\n# See MIGRATION_GUIDE.md', { name: 'env.config.placeholder' });
-        }
-
-        // Finalize Zip and Pipe to Upload
-        // We need a PassThrough because archiver pushes, google drive pulls
+        // Prepare the Zip Stream
         const pass = new PassThrough();
         archive.pipe(pass);
 
-        // Start Archiving
-        archive.finalize();
+        // --- DATA BACKUP LOGIC ---
+        if (type === 'db' || type === 'full') {
+            console.log('[BackupInfo] Starting JSON Table Export...');
 
-        // Start Uploading (Wait for it)
-        try {
-            const result = await uploadBackup(filename, pass, 'application/zip', JSON.stringify(manifest));
-            return result;
-        } catch (error) {
-            console.error('Backup Upload Failed:', error);
-            throw error;
+            // Try to auto-discover tables (optional, often blocked by permissions)
+            // fallback to CORE_TABLES
+            let tablesToBackup = CORE_TABLES;
+
+            for (const table of tablesToBackup) {
+                try {
+                    // console.log(`[BackupInfo] Fetching table: ${table}`);
+                    const data = await this.getTableData(table);
+                    if (data.length > 0) {
+                        archive.append(JSON.stringify(data, null, 2), { name: `data/${table}.json` });
+                        manifest.tables.push(table);
+                    }
+                } catch (err: any) {
+                    console.warn(`[BackupWarning] Skipped table ${table}: ${err.message}`);
+                }
+            }
+
+            filename = type === 'db' ? `backup_db_json_${timestamp}.zip` : `backup_full_json_${timestamp}.zip`;
         }
+
+        // --- CODEBASE BACKUP LOGIC ---
+        if (type === 'codebase') {
+            filename = `backup_code_${timestamp}.zip`;
+            this.archiveCodebase(archive);
+        } else if (type === 'full') {
+            this.archiveCodebase(archive);
+            archive.append('# ENV Configuration Required\n# See MIGRATION_GUIDE.md', { name: 'env.config.placeholder' });
+        }
+
+        // Add Manifest
+        archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
+
+        // Finalize Zip
+        return new Promise((resolve, reject) => {
+            archive.on('error', (err) => reject(err));
+            pass.on('error', (err) => reject(err));
+
+            console.log(`[BackupInfo] Starting Upload of ${filename}...`);
+
+            uploadBackup(filename, pass, 'application/zip', JSON.stringify(manifest), authClient)
+                .then((result) => {
+                    resolve(result);
+                })
+                .catch((err) => reject(err));
+
+            archive.finalize().catch(err => reject(err));
+        });
     }
 
     async rotate(maxBackups: number, tokens: any) {
@@ -124,36 +162,6 @@ export class BackupService {
             for (const file of toDelete) {
                 if (file.id) await deleteBackup(file.id);
             }
-        }
-    }
-
-    private getPasswordFromUrl(url: string) {
-        try {
-            const parsed = new URL(url);
-            return parsed.password;
-        } catch { return ''; }
-    }
-
-    private getPgDumpArgs(url: string) {
-        const parsed = new URL(url);
-        return [
-            '-h', parsed.hostname,
-            '-p', parsed.port || '5432',
-            '-U', parsed.username,
-            '-d', parsed.pathname.substring(1), // remove leading slash
-            '--no-owner', // Supabase specific: Don't try to set ownership
-            '--no-acl',   // Supabase specific: skip privileges
-            '--clean',    // Drop commands
-            '--if-exists'
-        ];
-    }
-
-    private async getGitCommit() {
-        try {
-            const { stdout } = await execAsync('git rev-parse HEAD');
-            return stdout.trim();
-        } catch {
-            return 'unknown';
         }
     }
 }

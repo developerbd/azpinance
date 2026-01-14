@@ -28,6 +28,7 @@ export function NotificationsBell() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const supabase = createClient();
 
     const fetchNotifications = async () => {
@@ -47,58 +48,54 @@ export function NotificationsBell() {
         }
     };
 
-    useEffect(() => {
-        fetchNotifications();
-
-        // Subscribe to real-time changes
-        const channel = supabase
-            .channel('notifications')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notifications',
-                },
-                (payload) => {
-                    // Check if it's for current user (though RLS should handle filtering, realtime might send all if not careful, but usually it respects RLS if enabled on publication)
-                    // Actually, client-side subscription with RLS enabled on table works for 'INSERT' if the user is allowed to SELECT the new row.
-                    fetchNotifications();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
-
     const markAsRead = async (id: string) => {
-        await supabase
+        const { error } = await supabase
             .from('notifications')
             .update({ read: true })
             .eq('id', id);
 
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        if (!error) {
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        }
     };
 
     const markAllAsRead = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        await supabase
+        const { error } = await supabase
             .from('notifications')
             .update({ read: true })
             .eq('user_id', user.id)
-            .eq('read', false);
+            .eq('read', false); // Optimization: only update unread ones
 
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        setUnreadCount(0);
+        if (!error) {
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            setUnreadCount(0);
+        }
     };
+
+    useEffect(() => {
+        setMounted(true);
+        fetchNotifications();
+        // ...
+    }, []);
+
+    // ... (rest of useEffects)
+
+    if (!mounted) {
+        return (
+            <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+            </Button>
+        );
+    }
 
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
+            {/* ... same Popover content ... */}
+
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />

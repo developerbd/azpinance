@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         const { token } = await driveClient.getAccessToken(); // This automatically refreshes if needed
 
         // 3. Perform Backup
-        const backupService = new BackupService(process.env.DATABASE_URL!);
+        const backupService = new BackupService(supabase);
 
         // Default to Full Backup for Weekly Cron
         const result = await backupService.performBackup('full', {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         // 4. Rotation
         await backupService.rotate(5, { refresh_token: refreshToken, access_token: token });
 
-        return NextResponse.json({ success: true, fileId: result.id });
+        return NextResponse.json({ success: true, fileId: (result as any).id });
     } catch (error: any) {
         console.error('Cron Backup Failed:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

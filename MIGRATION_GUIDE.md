@@ -3,121 +3,101 @@
 This document provides a step-by-step guide on how to migrate the **Biz Ad Finance** application to a new server, restore backups, and ensure continuous operation.
 
 ## 1. Prerequisites
-Before migrating, ensure you have the following:
-*   **The Full Backup Zip File** (downloaded from Google Drive).
-*   A **Virtual Private Server (VPS)** (e.g., DigitalOcean Droplet, AWS EC2, Linode).
-    *   OS: Ubuntu 22.04 LTS (Recommended).
-    *   RAM: Minimum 2GB.
-*   **Domain Name** (Optional but recommended).
+Before migrating, ensure you have the **Backup Zip File** (`backup_full_json_....zip`) downloaded from Google Drive or the Settings page.
 
 ---
 
-## 2. Server Setup (Ubuntu 22.04)
+## 2. Platform A: Vercel (Recommended)
+If you are moving to a new Vercel project:
+
+1.  **Code**: Unzip `backup_code_....zip` (found inside the full backup) and push it to a new GitHub repository. Import it to Vercel.
+2.  **Environment**: Add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `CRON_SECRET` to Vercel Settings.
+3.  **Database**: Create a new Supabase project.
+4.  **Restore Data**:
+    *   Clone your new repo locally.
+    *   Add `SUPABASE_SERVICE_ROLE_KEY` to `.env.local`.
+    *   Run `npx tsx scripts/restore.ts path/to/backup.zip` locally. The script will push data to your new Supabase DB.
+
+---
+
+## 3. Platform B: Hostinger / VPS (Ubuntu)
+
+### 3.1 Server Setup
 Connect to your new server via SSH:
 ```bash
 ssh root@your-server-ip
 ```
 
-### 2.1 Install Node.js
-We need Node.js (v18 or v20) to run the application.
+### 3.2 Install Dependencies
 ```bash
+# Install Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+sudo apt-get install -y nodejs unzip
+
+# Install PM2 (Process Manager)
+sudo npm install -g pm2
 ```
 
-### 2.2 Install PostgreSQL
-We need a database server.
+### 3.3 Deploy Code
+Upload the `backup_code_....zip` content to `/var/www/bizad-finance` (or similar).
 ```bash
-sudo apt-get install -y postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
-
-### 2.3 Configure Database
-Create a new user and database for the app.
-```bash
-sudo -u postgres psql
-```
-Inside the SQL prompt:
-```sql
-CREATE DATABASE bizad_finance;
-CREATE USER admin WITH ENCRYPTED PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE bizad_finance TO admin;
-\q
-```
-
----
-
-## 3. Restoring the Application
-
-### 3.1 Upload & Extract Backup
-Upload your backup zip file to the server (using SCP, FileZilla, or `wget`).
-```bash
-# Install unzip if missing
-sudo apt-get install unzip
-
-# Create app directory
-mkdir -p /var/www/bizad-finance
 cd /var/www/bizad-finance
-
-# Extract the backup
-unzip /path/to/backup_full_TIMESTAMP.zip
-```
-You should now see:
-*   `codebase.zip`
-*   `dump.sql`
-*   `manifest.json`
-
-### 3.2 Restore Codebase
-```bash
-unzip codebase.zip -d app
-cd app
 npm install
 npm run build
 ```
 
-### 3.3 Restore Database
-```bash
-# Import the SQL dump into the new database
-PGPASSWORD='your_secure_password' psql -U admin -h localhost -d bizad_finance < ../dump.sql
-```
-*Note: If you have errors about roles not existing, ignore them unless they are critical. The data is what matters.*
-
----
-
-## 4. Configuration & Launch
-
-### 4.1 Update Environment Variables
-Edit the `.env` file to point to your **NEW** local database.
+### 3.4 Configure Environment
+Create a `.env` file:
 ```bash
 nano .env
 ```
-Update these lines:
-```
-DATABASE_URL="postgresql://admin:your_secure_password@localhost:5432/bizad_finance?schema=public"
+Add:
+```env
 NEXT_PUBLIC_APP_URL="http://your-server-ip:3000"
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
+SUPABASE_SERVICE_ROLE_KEY="..." # Required for restoration script
+CRON_SECRET="your-secret"
 ```
 
-### 4.2 Start the Application
-Use `pm2` to keep the app running in the background.
+### 3.5 Restore Data
+Run the included script directly on the server:
 ```bash
-sudo npm install -g pm2
+npx tsx scripts/restore.ts /path/to/backup_full_json_....zip
+```
+
+### 3.6 Start App
+```bash
 pm2 start npm --name "bizad-finance" -- start
 pm2 save
 pm2 startup
 ```
 
-Your app is now running at `http://your-server-ip:3000`.
+---
+
+## 4. Platform C: cPanel (Shared Hosting)
+
+### 4.1 Prerequisites
+*   Ensure your cPanel supports **"Setup Node.js App"**.
+*   Ensure you can select **Node.js 18+**.
+
+### 4.2 Steps
+1.  **File Manager**: Upload the code (unzipped) to `public_html` or a subfolder.
+2.  **Node.js App**:
+    *   Create App.
+    *   Application Root: `public_html` (or your folder).
+    *   Application URL: Your domain.
+    *   Startup File: `node_modules/.bin/next` (or leave blank and try to run `npm start` via script).
+3.  **Environment**: Add variables in the cPanel UI or `.env` file.
+4.  **Restore**:
+    *   Access Terminal in cPanel.
+    *   Run `npm install`.
+    *   Run `npm run build`.
+    *   Run `npx tsx scripts/restore.ts path/to/backup.zip`.
 
 ---
 
-## 5. (Optional) Nginx & SSL
-To access the app via a domain with HTTPS:
-
-1.  Install Nginx: `sudo apt-get install nginx`
-2.  Configure Nginx Proxy to forward port 80 -> 3000.
-3.  Use Certbot for SSL: `sudo apt-get install certbot python3-certbot-nginx`
-
-## 6. Verification
+## 5. Verification
 1.  Log in with your existing credentials.
 2.  Go to **Activity Logs** to verify past data exists.
 3.  Check **Reports** to ensure calculations are correct.
