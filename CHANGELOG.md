@@ -1,6 +1,19 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.4.0](https://github.com/developerbd/azpinance/compare/v1.3.1...v1.4.0) (2026-01-15)
+
+
+### Features
+
+* Implement Backup & Disaster Recovery System (v1.3.1) ([472f6bc](https://github.com/developerbd/azpinance/commit/472f6bce951b31e794a642e038a45f55f45dd290))
+* implement universal js backup with restoration scripts and detailed guides ([d70e842](https://github.com/developerbd/azpinance/commit/d70e842cb139f762f70d670194297ae4de7fc374))
+
+
+### Bug Fixes
+
+* Resolve MobileNav hydration mismatch ([3282217](https://github.com/developerbd/azpinance/commit/3282217785ac473358afa7706db8d8842034b6cf))
 
 ## [1.3.0] - 2026-01-11
 ### Added
