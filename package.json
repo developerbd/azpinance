@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "release": "standard-version"
+    "release": "standard-version",
+    "ship": "npm run release && git push --follow-tags origin main"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",

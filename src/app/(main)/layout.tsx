@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/header';
 import Link from 'next/link';
 import { Package2 } from 'lucide-react';
 import { TimezoneProvider } from '@/components/providers/timezone-provider';
+import { APP_VERSION } from '@/lib/app-version';
 
 export default async function MainLayout({
     children,
@@ -62,7 +63,7 @@ export default async function MainLayout({
                 <div className="hidden md:block">
                     <div className="flex h-full max-h-screen flex-col gap-2">
                         <div className="flex-1 p-4">
-                            <Sidebar companyName={companyName} version={"1.3.0"} />
+                            <Sidebar companyName={companyName} version={APP_VERSION} />
                         </div>
                     </div>
                 </div>
