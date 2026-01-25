@@ -5,7 +5,7 @@ export interface Admin2FACheckResults {
     downgraded: number;
     reminded: number;
     compliant: number;
-    errors?: any[];
+    errors?: { id: string; error: any }[];
 }
 
 export async function runAdmin2FACheck(): Promise<Admin2FACheckResults> {
