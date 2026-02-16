@@ -33,7 +33,7 @@ export async function createFinancialAccount(data: unknown) {
         validatedData = FinancialAccountSchema.parse(data);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return { error: error.errors[0].message };
+            return { error: error.issues[0]?.message || 'Validation error' };
         }
         return { error: 'Invalid input data' };
     }
