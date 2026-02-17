@@ -27,16 +27,14 @@ export async function createForexTransaction(data: unknown) {
     }
 
     // 2. Validate Input
-    let validatedData: ForexTransactionInput;
-    try {
-        validatedData = ForexTransactionSchema.parse(data);
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            console.error('Zod Validation Error:', error.errors);
-            return { error: `Validation Error: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}` };
-        }
-        return { error: 'Invalid input data' };
+    const validatedFields = ForexTransactionSchema.safeParse(data);
+
+    if (!validatedFields.success) {
+        console.error('Zod Validation Error:', validatedFields.error.issues);
+        return { error: `Validation Error: ${validatedFields.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}` };
     }
+
+    const validatedData = validatedFields.data;
 
     // 3. (Profile fetched above for role check)
 

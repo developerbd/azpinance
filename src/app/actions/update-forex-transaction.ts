@@ -17,15 +17,13 @@ export async function updateForexTransaction(id: string, data: unknown) {
     }
 
     // 2. Validate Input (partial schema for updates)
-    let validatedData: Partial<ForexTransactionInput>;
-    try {
-        validatedData = ForexTransactionSchema.partial().parse(data);
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return { error: error.errors[0].message };
-        }
-        return { error: 'Invalid input data' };
+    const validatedFields = ForexTransactionSchema.partial().safeParse(data);
+
+    if (!validatedFields.success) {
+        return { error: validatedFields.error.issues[0]?.message || 'Validation error' };
     }
+
+    const validatedData = validatedFields.data;
 
     // 3. Get user profile for notification
     const { data: profile } = await supabase

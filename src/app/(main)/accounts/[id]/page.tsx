@@ -76,15 +76,31 @@ export default async function ViewAccountPage(props: { params: Promise<{ id: str
                             <p className="text-lg">{account.currency}</p>
                         </div>
 
-                        {/* Dynamic Details Rendering */}
-                        {Object.entries(details).map(([key, value]) => (
-                            <div key={key}>
-                                <p className="text-sm font-medium text-muted-foreground capitalize">
-                                    {key.replace(/_/g, ' ')}
-                                </p>
-                                <p className="text-base">{String(value)}</p>
+                        {/* Explicit Notes Section */}
+                        {details.notes && (
+                            <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t">
+                                <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                                <p className="text-base whitespace-pre-wrap">{String(details.notes)}</p>
                             </div>
-                        ))}
+                        )}
+
+                        {/* Dynamic Details Rendering (excluding notes as it's handled above) */}
+                        {Object.entries(details)
+                            .filter(([key]) => key !== 'notes')
+                            .map(([key, value]) => (
+                                <div key={key}>
+                                    <p className="text-sm font-medium text-muted-foreground capitalize">
+                                        {key.replace(/_/g, ' ')}
+                                    </p>
+                                    <p className="text-base">{String(value)}</p>
+                                </div>
+                            ))}
+
+                        {Object.keys(details).length === 0 && (
+                            <div className="col-span-1 md:col-span-2 text-center py-8 text-muted-foreground">
+                                No additional details available.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

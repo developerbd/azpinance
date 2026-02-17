@@ -27,15 +27,13 @@ export async function createSupplierPayment(data: unknown) {
     }
 
     // 2. Validate Input
-    let validatedData: SupplierPaymentInput;
-    try {
-        validatedData = SupplierPaymentSchema.parse(data);
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return { error: error.errors[0].message };
-        }
-        return { error: 'Invalid input data' };
+    const validatedFields = SupplierPaymentSchema.safeParse(data);
+
+    if (!validatedFields.success) {
+        return { error: validatedFields.error.issues[0]?.message || 'Validation error' };
     }
+
+    const validatedData = validatedFields.data;
 
     // 3. (Profile fetched above for role check)
 
