@@ -4,8 +4,6 @@ import crypto from 'crypto';
 const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
-
-
 /**
  * Get encryption key from environment variable
  * Falls back to a default key for development (NOT SECURE FOR PRODUCTION)
