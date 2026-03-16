@@ -13,29 +13,55 @@ export async function getContactsWithDue() {
         return { error: 'Unauthorized' };
     }
 
-    // 1. Fetch contacts (limit to prevent performance issues)
-    const { data: contacts, error: contactsError } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500); // Add reasonable limit
+    // Helper to fetch all rows bypassing the 1000 API limit
+    async function fetchAllRows(table: string, columns: string, eqFilters: Record<string, string> = {}) {
+        let allData: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-    if (contactsError) return { error: contactsError.message };
+        while (hasMore) {
+            let query = supabase
+                .from(table)
+                .select(columns)
+                .range(from, from + step - 1);
 
-    // 2. Fetch all forex transactions (Receivables) - Only Approved
-    const { data: forexData, error: forexError } = await supabase
-        .from('forex_transactions')
-        .select('contact_id, amount_bdt')
-        .eq('status', 'approved');
+            for (const [key, val] of Object.entries(eqFilters)) {
+                query = query.eq(key, val);
+            }
 
-    if (forexError) return { error: forexError.message };
+            const { data, error } = await query;
+            if (error) throw error;
 
-    // 3. Fetch all supplier payments (Payments)
-    const { data: paymentData, error: paymentError } = await supabase
-        .from('supplier_payments')
-        .select('supplier_id, amount');
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                if (data.length < step) {
+                    hasMore = false;
+                } else {
+                    from += step;
+                }
+            } else {
+                hasMore = false;
+            }
+        }
+        return allData;
+    }
 
-    if (paymentError) return { error: paymentError.message };
+    try {
+        // 1. Fetch contacts (limit to prevent performance issues on huge datasets, but get full balances)
+        const { data: contacts, error: contactsError } = await supabase
+            .from('contacts')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(500);
+
+        if (contactsError) return { error: contactsError.message };
+
+        // 2. Fetch all forex transactions (Receivables) - Only Approved
+        const forexData = await fetchAllRows('forex_transactions', 'contact_id, amount_bdt', { status: 'approved' });
+
+        // 3. Fetch all supplier payments (Payments)
+        const paymentData = await fetchAllRows('supplier_payments', 'supplier_id, amount');
 
     // 4. Aggregate Data
     const receivablesMap = new Map<string, number>();
@@ -64,4 +90,7 @@ export async function getContactsWithDue() {
     });
 
     return { data: contactsWithDue };
+    } catch (error: any) {
+        return { error: error?.message || 'Failed to fetch contacts with due' };
+    }
 }
