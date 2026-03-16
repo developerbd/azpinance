@@ -27,6 +27,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
+import { useRouter } from 'next/navigation';
+
 interface MakePaymentDialogProps {
     supplierId: string;
     onSuccess?: () => void;
@@ -34,6 +36,7 @@ interface MakePaymentDialogProps {
 }
 
 export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymentDialogProps) {
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -136,6 +139,7 @@ export function MakePaymentDialog({ supplierId, onSuccess, trigger }: MakePaymen
             setNotes('');
             setAttachments([]);
             if (onSuccess) onSuccess();
+            router.refresh();
         }
         setSubmitting(false);
     };
