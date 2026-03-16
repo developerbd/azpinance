@@ -55,6 +55,7 @@ export function ForexImportDialog() {
 
     useEffect(() => {
         setIsMounted(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (!isMounted) return null;

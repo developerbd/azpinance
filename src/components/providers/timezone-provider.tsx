@@ -21,6 +21,7 @@ export function TimezoneProvider({ children, serverTimezone }: TimezoneProviderP
 
     useEffect(() => {
         if (serverTimezone) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             setTimezone(serverTimezone);
         }
     }, [serverTimezone]);

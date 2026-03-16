@@ -1,8 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getContactsWithDue() {
+    noStore(); // Bypass Next.js fetch caching
     const supabase = await createClient();
 
     // Check Authentication

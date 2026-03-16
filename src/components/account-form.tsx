@@ -48,10 +48,10 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
         fetchContacts();
     }, []);
 
-    // Reset type and currency when scope changes
-    useEffect(() => {
+    const handleScopeChange = (val: string) => {
+        setScope(val);
         if (!account) { // Only reset defaults for new accounts
-            if (scope === 'local') {
+            if (val === 'local') {
                 setType('bank');
                 setCurrency('BDT');
             } else {
@@ -59,7 +59,7 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
                 setCurrency('USD');
             }
         }
-    }, [scope, account]);
+    };
 
     const handleDetailChange = (key: string, value: any) => {
         setDetails((prev: any) => ({ ...prev, [key]: value }));
@@ -400,7 +400,7 @@ export function AccountForm({ account, mode = 'edit' }: AccountFormProps) {
                     {/* Scope Selection */}
                     <div className="space-y-3">
                         <Label>Account Scope</Label>
-                        <RadioGroup defaultValue="local" value={scope} onValueChange={setScope} className="flex gap-4">
+                        <RadioGroup defaultValue="local" value={scope} onValueChange={handleScopeChange} className="flex gap-4">
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="local" id="local" />
                                 <Label htmlFor="local">Local</Label>

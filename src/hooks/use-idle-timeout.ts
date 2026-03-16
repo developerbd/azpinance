@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface UseIdleTimeoutOptions {
     warningTimeout: number; // milliseconds until warning
@@ -20,7 +20,7 @@ export function useIdleTimeout({
     const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
     const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const resetTimers = () => {
+    const resetTimers = useCallback(() => {
         // Clear existing timers
         if (warningTimerRef.current) {
             clearTimeout(warningTimerRef.current);
@@ -45,14 +45,15 @@ export function useIdleTimeout({
                 onClose();
             }, closeTimeout);
         }, warningTimeout);
-    };
+    }, [enabled, warningTimeout, closeTimeout, onWarning, onClose]);
 
-    const dismissWarning = () => {
+    const dismissWarning = useCallback(() => {
         resetTimers();
-    };
+    }, [resetTimers]);
 
     useEffect(() => {
         if (enabled) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             resetTimers();
         }
 
@@ -64,7 +65,7 @@ export function useIdleTimeout({
                 clearTimeout(closeTimerRef.current);
             }
         };
-    }, [enabled]);
+    }, [enabled, resetTimers]);
 
     return {
         isIdle,

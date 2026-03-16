@@ -173,6 +173,7 @@ export function Sidebar({ companyName = 'BizAd', className, version }: { company
 
     useEffect(() => {
         setIsMounted(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         const newOpenMenus: Record<string, boolean> = {};
         items.forEach(item => {
             if (item.submenu && pathname.startsWith(item.href)) {
@@ -204,6 +205,7 @@ export function Sidebar({ companyName = 'BizAd', className, version }: { company
         };
         fetchRole();
         fetchBadge();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (!isMounted) {
