@@ -1,6 +1,16 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [1.4.1](https://github.com/developerbd/azpinance/compare/v1.4.0...v1.4.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* bypass fetch caching in getContactsWithDue ([e37e6eb](https://github.com/developerbd/azpinance/commit/e37e6eb7047ee09b5921f3bb4d4c85000ae633f2))
+* **contacts:** fetch all payment/forex rows bypassing 1000 API limit ([5268daf](https://github.com/developerbd/azpinance/commit/5268daf6a99ab43f83a5e7b5f1abf395114449ce))
+* **contacts:** invalidate client router cache on new supplier payment ([07bf26e](https://github.com/developerbd/azpinance/commit/07bf26e0aa9c253358ab348f40b953fd8c9837e4))
+* **hooks:** Refactor useMediaQuery to useSyncExternalStore ([10d728c](https://github.com/developerbd/azpinance/commit/10d728c3aff473532cb073583af514e5cc75a95f))
 
 ## [1.4.0] - 2026-01-15
 ### Features
